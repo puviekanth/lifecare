@@ -1,12 +1,26 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { FiBell, FiMenu, FiX } from 'react-icons/fi';
 import logo from '../assets/images/logo.png';
-
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
+
+  // Define navigation links in an array for reusability
+  const navLinks = [
+    { to: "/bill", label: "Bill Products" },
+    { to: "/", label: "Medicine Management" },
+    { to: "/inventory", label: "Inventory" },
+    { to: "/suppliers", label: "Suppliers" },
+    { to: "/reports", label: "Reports" },
+  ];
+
+  // Common styles for NavLink
+  const getNavLinkClass = ({ isActive }) =>
+    isActive
+      ? 'text-yellow-300 border-yellow-300 md:border-b-2 md:pb-1 border-l-4 md:border-l-0 pl-2 md:pl-0'
+      : 'text-white hover:text-yellow-200 transition pl-2 md:pl-0';
 
   return (
     <header className="bg-gradient-to-r from-blue-800 via-blue-700 to-blue-600 text-white shadow-md">
@@ -33,25 +47,15 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6 text-sm font-medium">
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              isActive
-                ? 'text-yellow-300 border-b-2 border-yellow-300 pb-1'
-                : 'text-white hover:text-yellow-200 transition'
-            }
-          >
-            Medicine Management
-          </NavLink>
-          <NavLink to="/inventory" className="text-white hover:text-yellow-200 transition">
-            Inventory
-          </NavLink>
-          <NavLink to="/suppliers" className="text-white hover:text-yellow-200 transition">
-            Suppliers
-          </NavLink>
-          <NavLink to="/reports" className="text-white hover:text-yellow-200 transition">
-            Reports
-          </NavLink>
+          {navLinks.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={getNavLinkClass}
+            >
+              {link.label}
+            </NavLink>
+          ))}
         </nav>
 
         {/* Right Side Icons - Desktop */}
@@ -72,27 +76,16 @@ const Header = () => {
       {menuOpen && (
         <div className="md:hidden px-6 pb-4">
           <nav className="flex flex-col gap-4 text-sm font-medium bg-blue-900 rounded-md p-4 shadow-md">
-            <NavLink
-              to="/"
-              onClick={toggleMenu}
-              className={({ isActive }) =>
-                isActive
-                  ? 'text-yellow-300 border-l-4 border-yellow-300 pl-2'
-                  : 'text-white hover:text-yellow-200 transition pl-2'
-              }
-            >
-              Medicine Management
-            </NavLink>
-            <NavLink to="/inventory" onClick={toggleMenu} className="text-white hover:text-yellow-200 pl-2">
-              Inventory
-            </NavLink>
-            <NavLink to="/suppliers" onClick={toggleMenu} className="text-white hover:text-yellow-200 pl-2">
-              Suppliers
-            </NavLink>
-            <NavLink to="/reports" onClick={toggleMenu} className="text-white hover:text-yellow-200 pl-2">
-              Reports
-            </NavLink>
-
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={toggleMenu}
+                className={getNavLinkClass}
+              >
+                {link.label}
+              </NavLink>
+            ))}
             <div className="flex justify-between items-center pt-4 border-t border-blue-800 mt-4">
               <div className="flex gap-2 items-center text-white">
                 <FiBell className="text-lg" />

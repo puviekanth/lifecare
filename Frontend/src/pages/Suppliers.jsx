@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { FiSearch, FiEye, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import { products } from '../data/products';
 
-const Home = () => {
+const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('');
 
@@ -21,10 +21,10 @@ const Home = () => {
           Medicine Product Management
         </h1>
         <Link
-          to="/add"
+          to="/addSuppliers"
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 shadow-md transition duration-200 w-full md:w-auto"
         >
-          <FiPlus className="text-lg" /> Add Product
+          <FiPlus className="text-lg" /> Add Suppliers
         </Link>
       </div>
 
@@ -132,4 +132,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Suppliers;

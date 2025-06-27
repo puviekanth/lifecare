@@ -1,18 +1,21 @@
+import React from 'react'
+import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const AddMedicine = () => {
+  const api = 'http://localhost:3000';
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    productId: '',
     medicineName: '',
     price: '',
-    otcStatus: '',
-    supplierId: '',
+    category: '',
+    companyName: '',
     quantity: '',
     description: '',
     image: null,
   });
+  const [error, setError] = useState(null); // Add state for error handling
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -23,10 +26,36 @@ const AddMedicine = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Product added:', formData);
-    navigate('/');
+    setError(null); // Reset error state
+
+    const newFormData = new FormData();
+    newFormData.append('medicineName', formData.medicineName);
+    newFormData.append('price', formData.price);
+    newFormData.append('otcStatus', formData.otcStatus);
+    newFormData.append('companyName', formData.companyName);
+    newFormData.append('quantity', formData.quantity);
+    newFormData.append('description', formData.description);
+    if (formData.image) {
+      newFormData.append('image', formData.image);
+    }
+    
+
+    try {
+      const response = await axios.post(`${api}/addproduct`, newFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }, 
+      });
+      console.log('Successfully Added', response.data);
+      navigate('/'); 
+    } catch (error) {
+      console.error('Error Adding the product:', error);
+      setError(error.response?.data?.message || 'Failed to add product. Please try again.');
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/'); // Navigate back to home or reset form
   };
 
   return (
@@ -35,27 +64,21 @@ const AddMedicine = () => {
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-blue-800">Add New Medicine Product</h2>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleCancel}
             className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
           >
-            &times;
+            ×
           </button>
         </div>
 
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Product ID and Name */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product ID</label>
-              <input
-                type="text"
-                name="productId"
-                value={formData.productId}
-                onChange={handleChange}
-                placeholder="Enter Product ID"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
+          <div className="grid md:grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Medicine Name</label>
               <input
@@ -65,11 +88,11 @@ const AddMedicine = () => {
                 onChange={handleChange}
                 placeholder="Enter Medicine Name"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+                required
               />
             </div>
           </div>
 
-          {/* Price and OTC */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs.)</label>
@@ -79,17 +102,20 @@ const AddMedicine = () => {
                 value={formData.price}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+                placeholder="Price"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">OTC</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <select
                 name="otcStatus"
                 value={formData.otcStatus}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+                required
               >
-                <option value="">Select OTC Status</option>
+                <option value="">Select Category</option>
                 <option value="OTC">OTC</option>
                 <option value="A1">A1</option>
                 <option value="A2">A2</option>
@@ -98,17 +124,17 @@ const AddMedicine = () => {
             </div>
           </div>
 
-          {/* Supplier ID and Quantity */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Supplier ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
               <input
                 type="text"
-                name="supplierId"
-                value={formData.supplierId}
+                name="companyName"
+                value={formData.companyName}
                 onChange={handleChange}
-                placeholder="Enter Supplier ID"
+                placeholder="Enter Company Name"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+                required
               />
             </div>
             <div>
@@ -119,11 +145,11 @@ const AddMedicine = () => {
                 value={formData.quantity}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+                required
               />
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea
@@ -136,7 +162,6 @@ const AddMedicine = () => {
             />
           </div>
 
-          {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Upload Product Image</label>
             <input
@@ -144,14 +169,15 @@ const AddMedicine = () => {
               name="image"
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-blue-400"
+              accept="image/*"
+              required
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={handleCancel}
               className="px-4 py-2 border border-gray-400 rounded-md text-gray-700 hover:bg-gray-100 transition"
             >
               Cancel
@@ -159,6 +185,7 @@ const AddMedicine = () => {
             <button
               type="submit"
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+              onClick={handleSubmit}
             >
               Add Product
             </button>
