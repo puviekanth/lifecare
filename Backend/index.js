@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken'); 
 const multer = require('multer');
 const path = require('path');
 const CustomerModel = require('./model/CustomerModel');
@@ -151,13 +151,14 @@ app.post('/login', async (req, res) => {
 
 //Get the Products to display in ueEffect
   app.get('/getproducts', async (req, res) => {
-    try {
-      const medicine = await MedicineModel.find();
-      res.json(medicine);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching products', error });
-    }
-  });
+  try {
+    const products = await ProductModel.find();
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ message: 'Error fetching products' });
+  }
+});
   
   const Medicinestorage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -180,7 +181,6 @@ app.post('/login', async (req, res) => {
   try {
     
     const supplier = await SupplierModel.findOne({companyName});
-    console.log(supplier.companyName);
     if (!supplier) {return res.status(404).json({ message: 'Supplier not found'});}
 
     const medicine = new ProductModel({
@@ -205,15 +205,29 @@ app.post('/login', async (req, res) => {
 });
   
   // Update existing product
-  app.put('/updateMedicine/:id', uploadMedicine.single('image'), async (req, res) => {
+  app.put('/updateproduct/:id', uploadMedicine.single('image'), async (req, res) => {
     const { id } = req.params;
-    const { name, description, price, category,quantity } = req.body;
-    const imagePath = req.file ? req.file.path : '';
-  
+    const { productName , description, price, category,quantity , companyName } = req.body;
+    
+    
+
     try {
+      let imagePath;
+    if (req.file) {
+      imagePath = req.file.path;
+    }else if(req.body.image){
+      imagePath = req.body.image;
+    }else{
+      return res.status(400).json({'message':'No Image provided'});
+    }
+      const supplier = SupplierModel.findOne({companyName});
+
+    if(!supplier)
+      return res.status(404).json({ message: 'Supplier not found'});
+
       const updatedProduct = await ProductModel.findByIdAndUpdate(
         id,
-        { name, description, price, category, image: imagePath },
+        { productName, description, price, category, image: imagePath , quantity , companyName , supplierID : supplier._id },
         { new: true }
       );
       res.json(updatedProduct);
@@ -223,7 +237,7 @@ app.post('/login', async (req, res) => {
   });
   
   // Delete a product
-  app.delete('/deleteproducts/:id', async (req, res) => {
+  app.delete('/deleteproduct/:id', async (req, res) => {
     const { id } = req.params;
   
     try {
@@ -238,15 +252,36 @@ app.post('/login', async (req, res) => {
   app.use('/uploads/products', express.static(path.join(__dirname, 'uploads/products')));
 
 
+  // get existing individual product
+  app.get('/getproduct', async (req, res) => {
+    try {
+        const { id } = req.query; 
+
+        const product = await ProductModel.findOne({ _id: id });
+
+        if (!product) {
+            return res.status(200).json({ error: 'No product found' });
+        }
+        console.log(product);
+        return res.status(200).json(product);
+    }
+    catch (err) {
+        console.log('Error fetching product:', err);
+        return res.status(500).json({ error: 'Server side error', err });
+    }
+});
+
 
   //Create Supplier
   app.post('/addsuppliers', async (req, res) => {
     try {
         const { supplierName, companyName, email, phone } = req.body;
+        console.log(supplierName);
         const supplier = await new SupplierModel({ supplierName, companyName, email, phone  }).save();
+        console.log(supplier);
         res.status(200).json({ message: 'Supplier created successfully', supplier });
     } catch (error) {
-        console.error('Error creating customer:', error);
+        console.error('Error creating supplier:', error);
         if (error.code === 11000) {
             return res.status(400).json({ error: 'Email or NIC already exists' });
         }

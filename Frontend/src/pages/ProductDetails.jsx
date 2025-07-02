@@ -1,34 +1,79 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { products } from '../data/products';
 import { FiX } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import EditProductModal from '../components/EditModal'; // Import the new modal component
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const product = products.find((p) => p.id === id);
+  const [product, setProduct] = useState({});
   const [showEditModal, setShowEditModal] = useState(false);
-  const [formData, setFormData] = useState({ ...product });
+  const [formData, setFormData] = useState({});
+  const api = 'http://localhost:3000';
 
-  if (!product) {
-    return (
-      <div className="p-8 text-center text-lg text-red-500 font-semibold">
-        Product not found.
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (id) {
+      axios
+        .get(`${api}/getproduct?id=${id}`)
+        .then((res) => {
+          if (res.data.error) {
+            console.log(res.data.error);
+          } else {
+            setProduct(res.data);
+            setFormData(res.data); // Initialize formData with product data, including image path
+            console.log('Fetched Successfully');
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching product:', err);
+        });
+    } else {
+      console.error('No ID has been defined');
+    }
+  }, [id]);
 
-  const totalValue = (product.price * product.quantity).toFixed(2);
+  const totalValue = product.price && product.quantity
+    ? (product.price * product.quantity).toFixed(2)
+    : '0.00';
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, files } = e.target;
+    if (name === 'image') {
+      setFormData((prev) => ({ ...prev, image: files[0] || prev.image }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    console.log('Updated Product:', formData);
-    setShowEditModal(false);
+    const data = new FormData();
+    data.append('productName', formData.productName || '');
+    data.append('price', formData.price || '');
+    data.append('quantity', formData.quantity || '');
+    data.append('companyName', formData.companyName || '');
+    data.append('category', formData.category || '');
+    data.append('description', formData.description || '');
+    if (formData.image) {
+      data.append('image', formData.image); // Send file or original path
+    }
+
+    try {
+      const response = await axios.put(`${api}/updateproduct/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (response.data.error) {
+        console.error(response.data.error);
+      } else {
+        setProduct(response.data);
+        setFormData(response.data);
+        setShowEditModal(false);
+        console.log('Updated Successfully', response.data);
+      }
+    } catch (err) {
+      console.error('Error updating product:', err);
+    }
   };
 
   return (
@@ -43,16 +88,24 @@ const ProductDetails = () => {
         <h2 className="text-2xl font-bold mb-6 text-blue-800">Product Details</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left: Image and basic info */}
           <div>
-            <div className="w-full h-48 bg-gray-100 rounded-md mb-4 flex items-center justify-center text-gray-400 border border-dashed">
-              <span>No Image</span>
-            </div>
-            <p className="text-xl font-bold text-gray-800">{product.name}</p>
-            <p className="text-sm text-gray-500 mt-1">Product ID: {product.id}</p>
+            {product.image ? (
+              <img
+                src={`http://localhost:3000/${product.image.replace(/\\/g, '/')}`}
+                alt={product.productName || 'Product Image'}
+                className="w-full h-48 object-cover rounded-md"
+              />
+            ) : (
+              <div className="w-full h-48 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 border border-dashed">
+                No Image Available
+              </div>
+            )}
+            <p className="text-xl font-bold text-gray-800 mt-4">{product.productName}</p>
             <div className="mt-4">
               <p className="text-sm text-gray-500">Price</p>
-              <p className="text-lg font-semibold text-green-600">Rs. {product.price.toFixed(2)}</p>
+              <p className="text-lg font-semibold text-green-600">
+                Rs. {parseFloat(product?.price || 0).toFixed(2)}
+              </p>
             </div>
             <div className="mt-2">
               <p className="text-sm text-gray-500">Quantity</p>
@@ -60,18 +113,17 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Right: Additional details */}
           <div>
             <div className="mb-3">
-              <p className="text-sm text-gray-500">OTC Status</p>
+              <p className="text-sm text-gray-500">Product Category</p>
               <span
                 className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                  product.status === 'OTC'
+                  product.category === 'OTC'
                     ? 'bg-black text-white'
                     : 'bg-blue-100 text-blue-800'
                 }`}
               >
-                {product.status}
+                {product.category}
               </span>
             </div>
             <div className="mb-3">
@@ -79,8 +131,8 @@ const ProductDetails = () => {
               <p className="text-sm text-gray-800">{product.description}</p>
             </div>
             <div className="mb-3">
-              <p className="text-sm text-gray-500">Supplier ID</p>
-              <p className="text-sm text-gray-800">{product.supplier}</p>
+              <p className="text-sm text-gray-500">Supplier Company Name</p>
+              <p className="text-sm text-gray-800">{product.companyName}</p>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mt-4">
               <div className="flex justify-between text-sm font-semibold text-gray-700">
@@ -88,7 +140,7 @@ const ProductDetails = () => {
                 <p>Total Value</p>
               </div>
               <div className="flex justify-between mt-1">
-                <p className="text-green-600">In Stock ({product.quantity} units)</p>
+                <p className="text-green-600">In Stock ({product.quantity || 0} units)</p>
                 <p className="text-blue-700">Rs. {totalValue}</p>
               </div>
             </div>
@@ -111,103 +163,13 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl p-6 shadow-xl relative">
-            <button
-              className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl"
-              onClick={() => setShowEditModal(false)}
-            >
-              <FiX />
-            </button>
-            <h3 className="text-xl font-semibold mb-4 text-blue-800">Edit Product</h3>
-            <form onSubmit={handleUpdate} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Medicine Name"
-                  className="border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-400"
-                />
-                <input
-                  type="text"
-                  name="id"
-                  value={formData.id}
-                  disabled
-                  className="border p-2 rounded-md bg-gray-100 text-gray-500"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  placeholder="Price"
-                  className="border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-400"
-                />
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  placeholder="Quantity"
-                  className="border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-400"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  name="supplier"
-                  value={formData.supplier}
-                  onChange={handleChange}
-                  placeholder="Supplier ID"
-                  className="border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-400"
-                />
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="">Select OTC</option>
-                  <option value="OTC">OTC</option>
-                  <option value="A1">A1</option>
-                  <option value="A2">A2</option>
-                  <option value="A3">A3</option>
-                </select>
-              </div>
-              <textarea
-                name="description"
-                rows="3"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Description"
-                className="border border-gray-300 p-2 rounded-md w-full resize-none focus:ring-2 focus:ring-blue-400"
-              ></textarea>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 border border-gray-400 rounded-md text-gray-700 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <EditProductModal
+        showEditModal={showEditModal}
+        setShowEditModal={setShowEditModal}
+        formData={formData}
+        handleChange={handleChange}
+        handleUpdate={handleUpdate}
+      />
     </div>
   );
 };
