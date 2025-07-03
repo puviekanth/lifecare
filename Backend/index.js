@@ -290,6 +290,39 @@ app.post('/login', async (req, res) => {
 });
 
 
+//get supplier
+app.get('/getsuppliers', async (req, res) => {
+  try {
+    const suppliers = await SupplierModel.find();
+    res.json(suppliers);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ message: 'Error fetching products' });
+  }
+});
+
+app.put('/updatesupplier/:id', async (req, res) => {
+  try{
+    const { id } = req.params;
+    const { supplierName , companyName , email } = req.body;
+      const supplier = SupplierModel.findOne({email});
+
+    if(!supplier)
+      return res.status(404).json({ message: 'Supplier not found'});
+
+      const updatedSupplier = await SupplierModel.findByIdAndUpdate(
+        id,
+        { supplierName , companyName , email },
+        { new: true }
+      );
+      res.json(updatedSupplier);
+    } catch (error) {
+      res.status(500).json({ message: 'Error updating product', error });
+    }
+  });
+  
+
+
 // Start the server
 app.listen(3000, () => {
     console.log("Server is running on port 3000.");

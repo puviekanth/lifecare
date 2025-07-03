@@ -1,24 +1,88 @@
 // src/pages/Home.jsx
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { FiSearch, FiEye, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
-import { products } from '../data/products';
+import axios from 'axios';
+import EditSupplierModal from'../components/EditSupplierModal';
 
 const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('');
+  const [loading,setLoading] = useState(false);
+  const [error,setError] = useState('');
+  const [filter,setFilter] = useState('');
+  const [suppliers,setSuppliers] = useState([]);
+  const api = 'http://localhost:3000';
+  const [ showEditModal , setShowEditModal] = useState(false);
+  const [formData , setFormData] = useState({});
+  const [id, setid ]  =useState('')
 
-  const filteredData = products.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.supplier.toLowerCase().includes(searchTerm.toLowerCase())
-  ).filter((item) => (filter ? item.status === filter : true));
+  const filteredData = suppliers.filter((supplier) =>
+    (supplier.supplierName?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+     supplier.companyName?.toLowerCase()?.includes(searchTerm.toLowerCase())) &&
+    (filter ? supplier.status === filter : true)
+  );
+
+   useEffect(() => {
+    const fetchSuppliers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(`${api}/getsuppliers`);
+        setSuppliers(response.data);
+      } catch (error) {
+        if (error.response) {
+          setError(`Server error: ${error.response.data.message || 'Unknown error'}`);
+        } else if (error.request) {
+          setError('Network error: Unable to reach the server. Please check your connection.');
+        } else {
+          setError('An unexpected error occurred. Please try again.');
+        }
+        console.error('Axios error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSuppliers();
+  }, []);
+
+const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    const data = new FormData();
+    data.append('supplierName', formData.supplierName || '');
+    data.append('companyName', formData.price || '');
+    data.append('email', formData.email || '');
+
+    try {
+      const response = await axios.put(`${api}/updatesupplier/${id}`, data, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data.error) {
+        console.error(response.data.error);
+      } else {
+        setSuppliers(response.data);
+        setFormData(response.data);
+        setShowEditModal(false);
+        console.log('Updated Successfully', response.data);
+      }
+    } catch (err) {
+      console.error('Error updating product:', err);
+    }
+  };
+
+  
 
   return (
     <div className="px-4 md:px-6 py-6 bg-gradient-to-br from-blue-50 to-white min-h-screen">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
         <h1 className="text-2xl md:text-3xl font-extrabold text-blue-800 tracking-tight text-center md:text-left">
-          Medicine Product Management
+          Supplier Management
         </h1>
         <Link
           to="/addSuppliers"
@@ -30,86 +94,46 @@ const Suppliers = () => {
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-8 border border-blue-100">
         <h2 className="text-xl font-semibold text-blue-700 flex items-center gap-2 mb-4">
-          <FiSearch className="text-blue-500" /> Search & Filter Products
+          <FiSearch className="text-blue-500" /> Search & Filter Suppliers
         </h2>
         <div className="flex flex-col md:flex-row gap-4">
           <input
             type="text"
-            placeholder="Search by medicine name, product ID, or supplier ID..."
+            placeholder="Search by Supplier name or Company Name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 border border-gray-300 p-3 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
           />
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="border border-gray-300 p-3 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          >
-            <option value="">Filter by OTC</option>
-            <option value="OTC">OTC</option>
-            <option value="A1">A1</option>
-            <option value="A2">A2</option>
-            <option value="A3">A3</option>
-          </select>
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md border border-blue-100">
         <h2 className="text-xl font-semibold text-blue-700 mb-4">
-          All Products <span className="text-sm text-gray-500">({filteredData.length})</span>
+          All Suppliers <span className="text-sm text-gray-500">({filteredData.length})</span>
         </h2>
 
         <div className="overflow-x-auto">
           <table className="min-w-[1000px] w-full table-auto text-sm text-gray-700">
             <thead className="bg-blue-100 text-blue-900 border-b">
               <tr className="text-left">
-                <th className="py-2 px-3">Image</th>
-                <th className="px-3">Product ID</th>
-                <th className="px-3">Medicine Name</th>
-                <th className="px-3">Price (Rs.)</th>
-                <th className="px-3">OTC Status</th>
-                <th className="px-3">Supplier ID</th>
-                <th className="px-3">Quantity</th>
-                <th className="px-3">Description</th>
-                <th className="px-3">Actions</th>
-              </tr>
+                <th className="px-3 py-2">Supplier Name</th>
+                <th className="px-3 py-2">Company Name</th>
+                <th className="px-3 py-2">Email</th>
+                <th className='px-3 py-2'>Actions</th>
+                </tr>
             </thead>
             <tbody>
-              {filteredData.map((item) => (
-                <tr key={item.id} className="border-b hover:bg-blue-50 transition">
-                  <td className="py-2 px-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-md shadow-inner"></div>
-                  </td>
-                  <td className="px-3 font-medium">{item.id}</td>
-                  <td className="px-3">
-                    <Link
-                      to={`/product/${item.id}`}
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      {item.name}
-                    </Link>
-                  </td>
-                  <td className="px-3 font-semibold text-green-600">Rs. {item.price.toFixed(2)}</td>
-                  <td className="px-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      item.status === 'OTC'
-                        ? 'bg-black text-white'
-                        : 'bg-gray-200 text-gray-700'
-                    }`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-3">{item.supplier}</td>
-                  <td className="px-3 font-semibold">{item.quantity}</td>
-                  <td className="px-3 text-gray-600">{item.description}</td>
-                  <td className="px-3">
-                    <div className="flex gap-2">
-                      <Link to={`/product/${item.id}`} className="text-blue-600 hover:text-blue-800">
-                        <FiEye />
-                      </Link>
-                      <Link to={`/update/${item.id}`} className="text-yellow-500 hover:text-yellow-600">
+              {filteredData.map((supplier) => (
+                <tr key={supplier._id} className="border-b hover:bg-blue-50 transition">
+                  
+                  <td className="px-3 py-4">{supplier.supplierName}</td>
+                  <td className="px-3 py-4">{supplier.companyName}</td>
+                  <td className="px-3 font-semibold py-4">{supplier.email}</td>
+                  <td className="px-3 py-4">
+                    <div className="flex gap-4">
+                      <button className="text-yellow-500 hover:text-yellow-600" onClick={()=>{setid(supplier._id);setShowEditModal(true);}}>
                         <FiEdit2 />
-                      </Link>
+                      </button>
                       <button className="text-red-500 hover:text-red-700">
                         <FiTrash2 />
                       </button>
@@ -120,7 +144,7 @@ const Suppliers = () => {
               {filteredData.length === 0 && (
                 <tr>
                   <td colSpan="9" className="text-center py-6 text-gray-400 italic">
-                    No products match your search or filter.
+                    No suppleirs match your search or filter.
                   </td>
                 </tr>
               )}
@@ -128,6 +152,13 @@ const Suppliers = () => {
           </table>
         </div>
       </div>
+      <EditSupplierModal
+              showEditModal={showEditModal}
+              setShowEditModal={setShowEditModal}
+              formData={formData}
+              handleChange={handleChange}
+              handleUpdate={handleUpdate}
+            />
     </div>
   );
 };
