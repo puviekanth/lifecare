@@ -1,193 +1,352 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FiSearch, FiEye, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
-import axios from 'axios';
-import EditProductModal from '../components/EditModal';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import EHeader from '../components/EHeader';
+import {
+  ShieldCheckIcon,
+  TruckIcon,
+  ClockIcon,
+  StarIcon,
+  DocumentTextIcon,
+  HeartIcon,
+  PhoneIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline';
+
+
+// Counter component for animated stats
+const Counter = ({ end, duration = 2 }) => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const increment = end / (duration * 60); // 60 FPS
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        start = end;
+        clearInterval(timer);
+      }
+      setCount(Math.floor(start));
+    }, 1000 / 60);
+    return () => clearInterval(timer);
+  }, [end, duration]);
+
+  return <span>{count.toLocaleString()}</span>;
+};
+
+const StatsSection = () => {
+  const statVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: (index) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 100,
+        damping: 10,
+        delay: index * 0.2,
+      },
+    }),
+  };
+
+  const stats = [
+    { value: 50000, label: 'Happy Customers', suffix: '+' },
+    { value: 10000, label: 'Medicines Available', suffix: '+' },
+    { value: 24, label: 'Customer Support', suffix: '/7' },
+    { value: 2, label: 'Delivery Time', suffix: '-4 hrs' },
+  ];
+
+  return (
+    <section className="bg-white py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        {stats.map((stat, index) => (
+          <motion.div
+            key={index}
+            custom={index}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={statVariants}
+            className="p-6 bg-gradient-to-br from-blue-50 to-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+          >
+            <h2 className="text-2xl font-bold text-blue-900">
+              {stat.value >= 24 ? (
+                stat.value === 24 ? (
+                  '24/7'
+                ) : (
+                  <>
+                    <Counter end={stat.value} />
+                    {stat.suffix}
+                  </>
+                )
+              ) : (
+                <>
+                  <Counter end={stat.value} />
+                  {stat.suffix}
+                </>
+              )}
+            </h2>
+            <p className="text-gray-600 mt-2">{stat.label}</p>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+};
 
 const Home = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('');
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const api = 'http://localhost:3000';
-  const naviagte = useNavigate();
-
-  const filteredData = products.filter((item) =>
-    (item.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-     String(item.id)?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-     item.supplier?.toLowerCase()?.includes(searchTerm.toLowerCase())) &&
-    (filter ? item.status === filter : true)
-  );
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axios.get(`${api}/getproducts`);
-        setProducts(response.data);
-      } catch (error) {
-        if (error.response) {
-          setError(`Server error: ${error.response.data.message || 'Unknown error'}`);
-        } else if (error.request) {
-          setError('Network error: Unable to reach the server. Please check your connection.');
-        } else {
-          setError('An unexpected error occurred. Please try again.');
-        }
-        console.error('Axios error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`${api}/deleteproduct/${id}`);
-      setProducts(products.filter((item) => item.id !== id));
-      naviagte('/');
-      window.location.reload();
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      setError('Failed to delete product.');
-    }
+  // Animation variants for sections
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
   };
 
   return (
-    <div className="px-4 md:px-6 py-6 bg-gradient-to-br from-blue-50 to-white min-h-screen">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-blue-800 tracking-tight text-center md:text-left">
-          Medicine Product Management
-        </h1>
-        <Link
-          to="/addproduct"
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 shadow-md transition duration-200 w-full md:w-auto"
-        >
-          <FiPlus className="text-lg" /> Add Product
-        </Link>
-      </div>
-
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8 border border-blue-100">
-        <h2 className="text-xl font-semibold text-blue-700 flex items-center gap-2 mb-4">
-          <FiSearch className="text-blue-500" /> Search & Filter Products
-        </h2>
-        <div className="flex flex-col md:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="Search by medicine name, product ID, or supplier ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 border border-gray-300 p-3 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          />
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="border border-gray-300 p-3 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+    <>
+    <EHeader />
+    <main className="bg-gray-50">
+      {/* Hero Section */}
+      <section
+        className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 overflow-hidden"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1576091160399-1f96f3f3c837?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        <div className="absolute inset-0 bg-blue-900 bg-opacity-60" />
+        <div className="relative grid md:grid-cols-2 gap-8 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="text-center md:text-left"
           >
-            <option value="">Filter by OTC</option>
-            <option value="OTC">OTC</option>
-            <option value="A1">A1</option>
-            <option value="A2">A2</option>
-            <option value="A3">A3</option>
-          </select>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight">
+              Your Health, <span className="block">Our Priority</span>
+            </h1>
+            <p className="text-lg text-gray-200 mb-8 max-w-md mx-auto md:mx-0">
+              Get authentic medicines delivered to your doorstep. Fast, reliable, and trusted by thousands.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)' }}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
+                aria-label="Order Medicines"
+              >
+                Order Medicines
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)' }}
+                className="bg-white text-blue-900 border border-blue-900 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition duration-300"
+                aria-label="Upload Prescription"
+              >
+                Upload Prescription
+              </motion.button>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, rotateY: 30 }}
+            animate={{ opacity: 1, rotateY: 0 }}
+            transition={{ duration: 1, ease: 'easeOut' }}
+            className="relative"
+          >
+            <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg p-4 transform hover:scale-105 transition-transform duration-500">
+              <video
+                autoPlay
+                loop
+                muted
+                className="w-full h-64 md:h-96 rounded-lg shadow-2xl"
+                src="https://player.vimeo.com/progressive_redirect/playback/689141147/rendition/1080p/file.mp4?loc=external&signature=5a2b8b5e7b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b"
+              >
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      <div className="bg-white p-6 rounded-lg shadow-md border border-blue-100">
-        <h2 className="text-xl font-semibold text-blue-700 mb-4">
-          All Products <span className="text-sm text-gray-500">({filteredData.length})</span>
-        </h2>
+      {/* Stats Section */}
+      <StatsSection />
 
-        <div className="overflow-x-auto">
-          <table className="min-w-[1000px] w-full table-auto text-sm text-gray-700">
-            <thead className="bg-blue-100 text-blue-900 border-b">
-              <tr className="text-left">
-                <th className="py-2 px-3">Image</th>
-                <th className="px-3">Medicine Name</th>
-                <th className="px-3">Price (Rs.)</th>
-                <th className="px-3">OTC Status</th>
-                <th className="px-3">Supplier Name</th>
-                <th className="px-3">Quantity</th>
-                <th className="px-3">Description</th>
-                <th className="px-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
-                <tr>
-                  <td colSpan="9" className="text-center py-6">
-                    Loading products...
-                  </td>
-                </tr>
-              )}
-              {error && (
-                <tr>
-                  <td colSpan="9" className="text-center py-6 text-red-500">
-                    {error}
-                  </td>
-                </tr>
-              )}
-              {!loading && !error && filteredData.map((item) => (
-                <tr key={item.id} className="border-b hover:bg-blue-50 transition">
-                  <td className="py-2 px-3">
-                    {item.image ? (
-                      <img src={`${api}/${item.image}`} alt={item.name} className="w-10 h-10 rounded-md object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 bg-gray-200 rounded-md shadow-inner"></div>
-                    )}
-                  </td>
-                  <td className="px-3">
-                    <Link
-                      to={`/product/${item.id}`}
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      {item.productName}
-                    </Link>
-                  </td>
-                  <td className="px-3 font-semibold text-green-600">Rs. {item.price.toFixed(2)}</td>
-                  <td className="px-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        item.category === 'OTC' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      {item.category}
-                    </span>
-                  </td>
-                  <td className="px-3">{item.companyName}</td>
-                  <td className="px-3 font-semibold">{item.quantity}</td>
-                  <td className="px-3 text-gray-600">{item.description}</td>
-                  <td className="px-3">
-                    <div className="flex gap-3">
-                      <Link to={`/product/${item._id}`} className="text-blue-600 hover:text-blue-800" aria-label={`View ${item.name}`}>
-                        <FiEye />
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(item._id)}
-                        className="text-red-500 hover:text-red-700"
-                        aria-label={`Delete ${item.name}`}
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {!loading && !error && filteredData.length === 0 && (
-                <tr>
-                  <td colSpan="9" className="text-center py-6 text-gray-400 italic">
-                    No products match your search or filter.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {/* Why Choose Life Care */}
+      <motion.section
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="bg-gray-100 py-16"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.h2
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            className="text-3xl sm:text-4xl font-extrabold text-blue-900 mb-4"
+          >
+            Why Choose Life Care?
+          </motion.h2>
+          <p className="text-lg text-gray-600 mb-12 max-w-3xl mx-auto">
+            We're committed to providing you with the best healthcare experience through our reliable services and quality products.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              {
+                icon: <ShieldCheckIcon className="w-8 h-8 text-blue-600" />,
+                title: '100% Authentic',
+                desc: 'All medicines are sourced directly from licensed manufacturers.',
+              },
+              {
+                icon: <TruckIcon className="w-8 h-8 text-blue-600" />,
+                title: 'Fast Delivery',
+                desc: 'Free delivery within Colombo in 2–4 hours.',
+              },
+              {
+                icon: <ClockIcon className="w-8 h-8 text-blue-600" />,
+                title: '24/7 Support',
+                desc: 'Round-the-clock customer support and emergency assistance.',
+              },
+              {
+                icon: <StarIcon className="w-8 h-8 text-blue-600" />,
+                title: 'Expert Care',
+                desc: 'Qualified pharmacists available for consultation.',
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9, rotateX: 10 }}
+                whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
+                whileHover={{ scale: 1.05, rotateY: 5, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.15)' }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-white rounded-lg shadow-lg p-6 transform perspective-1000"
+              >
+                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  {item.icon}
+                </div>
+                <h3 className="font-bold text-lg text-blue-900 mb-2">{item.title}</h3>
+                <p className="text-gray-600 text-sm">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
+      </motion.section>
+
+      {/* Our Services */}
+      <motion.section
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="bg-white py-16"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.h2
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            className="text-3xl sm:text-4xl font-extrabold text-blue-900 mb-4"
+          >
+            Our Services
+          </motion.h2>
+          <p className="text-lg text-gray-600 mb-12 max-w-3xl mx-auto">
+            Comprehensive healthcare solutions at your fingertips.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              {
+                icon: <HeartIcon className="w-6 h-6" />,
+                bgColor: 'bg-blue-600',
+                title: 'Medicine Delivery',
+                desc: 'Order prescription and OTC medicines online.',
+                link: '#',
+              },
+              {
+                icon: <DocumentTextIcon className="w-6 h-6" />,
+                bgColor: 'bg-green-600',
+                title: 'Prescription Upload',
+                desc: 'Upload your prescription and get medicines delivered.',
+                link: '#',
+              },
+              {
+                icon: <UserGroupIcon className="w-6 h-6" />,
+                bgColor: 'bg-red-500',
+                title: 'Health Products',
+                desc: 'Wide range of health and wellness products.',
+                link: '#',
+              },
+              {
+                icon: <PhoneIcon className="w-6 h-6" />,
+                bgColor: 'bg-purple-600',
+                title: 'Teleconsultation',
+                desc: 'Consult with doctors from the comfort of your home.',
+                link: '#',
+              },
+            ].map((service, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.05, rotateY: 5, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.15)' }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-white rounded-lg shadow-lg p-6 text-left transform perspective-1000"
+              >
+                <div className={`${service.bgColor} text-white w-10 h-10 flex items-center justify-center rounded mb-4`}>
+                  {service.icon}
+                </div>
+                <h3 className="font-bold text-lg text-blue-900 mb-2">{service.title}</h3>
+                <p className="text-gray-600 text-sm mb-4">{service.desc}</p>
+                <a href={service.link} className="text-blue-600 font-semibold hover:underline flex items-center gap-1">
+                  Learn More →
+                </a>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Trusted By */}
+      <motion.section
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="bg-gray-50 py-16"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.h2
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            className="text-3xl sm:text-4xl font-extrabold text-blue-900 mb-4"
+          >
+            Trusted By
+          </motion.h2>
+          <p className="text-lg text-gray-600 mb-8">
+            Leading hospitals, certified pharmacists, and thousands of loyal customers.
+          </p>
+          <div className="flex flex-wrap justify-center gap-8">
+            {[
+              'https://images.unsplash.com/photo-1614935151651-0f27f2ff0a77?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+              'https://images.unsplash.com/photo-1620283086279-8643b96b05c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+              'https://images.unsplash.com/photo-1614680376573-545639729e4d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+              'https://images.unsplash.com/photo-1620283086279-8643b96b05c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+            ].map((src, index) => (
+              <motion.img
+                key={index}
+                src={src}
+                alt={`Brand ${index + 1}`}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="h-12 object-contain"
+                whileHover={{ scale: 1.1 }}
+              />
+            ))}
+          </div>
+        </div>
+      </motion.section>
+    </main>
+    </>
   );
 };
 

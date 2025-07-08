@@ -1,6 +1,7 @@
 import React , {useState} from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import EHeader from '../components/EHeader';
 
 
 function Login() {
@@ -20,10 +21,10 @@ function Login() {
                 localStorage.setItem('token',response.data.token)
                 console.log(response);
                 if(response.data.user.email.endsWith('.admin@lifecare.com')){
-                    navigate('#');
+                    navigate('/inventory');
                 }
                 else{
-                    navigate('/');
+                    navigate('/home');
                 }
             })
             .catch(error => {
@@ -32,13 +33,15 @@ function Login() {
                 } else {
                     setErrorMessage('Something went wrong. Please try again.');
                 }
-                navigate('/Login');
+                navigate('/login');
             });
     }
 
 
 
   return (
+    <>
+    <EHeader />
     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-4">Login</h2>
       <form>
@@ -83,6 +86,7 @@ function Login() {
         </p>
       </form>
     </div>
+    </>
   );
 }
 

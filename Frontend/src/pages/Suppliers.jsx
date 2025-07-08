@@ -1,20 +1,21 @@
-// src/pages/Home.jsx
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FiSearch, FiEye, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import axios from 'axios';
-import EditSupplierModal from'../components/EditSupplierModal';
+import EditSupplierModal from '../components/EditSupplierModal';
+import { useNavigate } from 'react-router-dom';
 
 const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading,setLoading] = useState(false);
-  const [error,setError] = useState('');
-  const [filter,setFilter] = useState('');
-  const [suppliers,setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState('');
+  const [suppliers, setSuppliers] = useState([]);
   const api = 'http://localhost:3000';
-  const [ showEditModal , setShowEditModal] = useState(false);
-  const [formData , setFormData] = useState({});
-  const [id, setid ]  =useState('')
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [id, setId] = useState('');
+  const navigate = useNavigate();
 
   const filteredData = suppliers.filter((supplier) =>
     (supplier.supplierName?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
@@ -22,7 +23,7 @@ const Suppliers = () => {
     (filter ? supplier.status === filter : true)
   );
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchSuppliers = async () => {
       setLoading(true);
       setError(null);
@@ -45,38 +46,64 @@ const Suppliers = () => {
     fetchSuppliers();
   }, []);
 
-const handleChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    const data = new FormData();
-    data.append('supplierName', formData.supplierName || '');
-    data.append('companyName', formData.price || '');
-    data.append('email', formData.email || '');
-
     try {
+      const data = {
+        supplierName: formData.supplierName || '',
+        companyName: formData.companyName || '',
+        email: formData.email || '',
+        phone: formData.phone || '',
+      };
+
       const response = await axios.put(`${api}/updatesupplier/${id}`, data, {
         headers: { 'Content-Type': 'application/json' },
       });
+
       if (response.data.error) {
         console.error(response.data.error);
       } else {
-        setSuppliers(response.data);
-        setFormData(response.data);
+        // Update the suppliers list with the updated supplier
+        setSuppliers((prev) =>
+          prev.map((sup) => (sup._id === id ? response.data : sup))
+        );
         setShowEditModal(false);
         console.log('Updated Successfully', response.data);
+        navigate('/suppliers');
       }
     } catch (err) {
-      console.error('Error updating product:', err);
+      console.error('Error updating supplier:', err);
     }
   };
 
   
+  const handleEditClick = (supplier) => {
+    setId(supplier._id);
+    setFormData({
+      supplierName: supplier.supplierName || '',
+      companyName: supplier.companyName || '',
+      email: supplier.email || '',
+      phone: supplier.phone || '',
+    });
+    setShowEditModal(true);
+  };
+
+const handleDelete = async (supplier) => {
+  try {
+    const response = await axios.delete(`${api}/deletesupplier/${supplier._id}`);
+    console.log('Supplier deleted successfully', response.data);
+    // Update the suppliers state to remove the deleted supplier
+    setSuppliers((prev) => prev.filter((sup) => sup._id !== supplier._id));
+  } catch (error) {
+    console.error('Error deleting supplier:', error);
+    setError('Failed to delete supplier. Please try again.');
+  }
+};
 
   return (
     <div className="px-4 md:px-6 py-6 bg-gradient-to-br from-blue-50 to-white min-h-screen">
@@ -119,22 +146,26 @@ const handleChange = (e) => {
                 <th className="px-3 py-2">Supplier Name</th>
                 <th className="px-3 py-2">Company Name</th>
                 <th className="px-3 py-2">Email</th>
-                <th className='px-3 py-2'>Actions</th>
-                </tr>
+                <th className="px-3 py-2">Phone</th>
+                <th className="px-3 py-2">Actions</th>
+              </tr>
             </thead>
             <tbody>
               {filteredData.map((supplier) => (
                 <tr key={supplier._id} className="border-b hover:bg-blue-50 transition">
-                  
                   <td className="px-3 py-4">{supplier.supplierName}</td>
                   <td className="px-3 py-4">{supplier.companyName}</td>
                   <td className="px-3 font-semibold py-4">{supplier.email}</td>
+                  <td className="px-3 py-4">{supplier.phone}</td>
                   <td className="px-3 py-4">
                     <div className="flex gap-4">
-                      <button className="text-yellow-500 hover:text-yellow-600" onClick={()=>{setid(supplier._id);setShowEditModal(true);}}>
+                      <button
+                        className="text-yellow-500 hover:text-yellow-600"
+                        onClick={() => handleEditClick(supplier)}
+                      >
                         <FiEdit2 />
                       </button>
-                      <button className="text-red-500 hover:text-red-700">
+                      <button className="text-red-500 hover:text-red-700" onClick={()=>handleDelete(supplier)}>
                         <FiTrash2 />
                       </button>
                     </div>
@@ -144,7 +175,7 @@ const handleChange = (e) => {
               {filteredData.length === 0 && (
                 <tr>
                   <td colSpan="9" className="text-center py-6 text-gray-400 italic">
-                    No suppleirs match your search or filter.
+                    No suppliers match your search or filter.
                   </td>
                 </tr>
               )}
@@ -153,12 +184,12 @@ const handleChange = (e) => {
         </div>
       </div>
       <EditSupplierModal
-              showEditModal={showEditModal}
-              setShowEditModal={setShowEditModal}
-              formData={formData}
-              handleChange={handleChange}
-              handleUpdate={handleUpdate}
-            />
+        showEditModal={showEditModal}
+        setShowEditModal={setShowEditModal}
+        formData={formData}
+        handleChange={handleChange}
+        handleUpdate={handleUpdate}
+      />
     </div>
   );
 };
