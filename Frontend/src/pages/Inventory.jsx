@@ -4,6 +4,7 @@ import { FiSearch, FiEye, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import axios from 'axios';
 import EditProductModal from '../components/EditModal';
 import { useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +58,8 @@ const Home = () => {
   };
 
   return (
+    <>
+    <Header />
     <div className="px-4 md:px-6 py-6 bg-gradient-to-br from-blue-50 to-white min-h-screen">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
         <h1 className="text-2xl md:text-3xl font-extrabold text-blue-800 tracking-tight text-center md:text-left">
@@ -188,6 +191,7 @@ const Home = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

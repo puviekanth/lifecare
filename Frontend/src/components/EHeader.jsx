@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { FiBell, FiMenu, FiX , FiShoppingCart} from 'react-icons/fi';
 import {jwtDecode} from 'jwt-decode'; // Browser-compatible JWT decoding
 import logo from '../assets/images/logo.png';
+import { Link } from 'react-router-dom';
 
 const EHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,6 +27,7 @@ const EHeader = () => {
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
   const navLinks = [
+    { to: '/home' , label:'Home'},
     { to: '/products', label: 'Products' },
     { to: '/consultation', label: 'Book Consultation' },
     { to: '/prescription', label: 'Upload Prescription' },
@@ -77,9 +79,9 @@ const EHeader = () => {
                 </span>
               </div>
               
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
+              <Link to='/profile' className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
                 A
-              </div>
+              </Link>
             </>
           ) : (
             <>
