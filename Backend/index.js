@@ -9,7 +9,7 @@ const CustomerModel = require('./model/CustomerModel');
 const ProductModel = require('./model/MedicineModel');
 const SupplierModel = require('./model/SupplierModel');
 const saltRounds = 10;
-const secretKey = 'lifecare/AGILE/y3s2'
+const secretKey = 'lifecare/AGILE/y3s2';
 
 const app = express();
 
@@ -276,7 +276,7 @@ app.post('/login', async (req, res) => {
   app.post('/addsuppliers', async (req, res) => {
     try {
         const { supplierName, companyName, email, phone } = req.body;
-        console.log(supplierName);
+        console.log(phone);
         const supplier = await new SupplierModel({ supplierName, companyName, email, phone  }).save();
         console.log(supplier);
         res.status(200).json({ message: 'Supplier created successfully', supplier });
@@ -302,25 +302,54 @@ app.get('/getsuppliers', async (req, res) => {
 });
 
 app.put('/updatesupplier/:id', async (req, res) => {
-  try{
+  try {
     const { id } = req.params;
-    const { supplierName , companyName , email } = req.body;
-      const supplier = SupplierModel.findOne({email});
-
-    if(!supplier)
-      return res.status(404).json({ message: 'Supplier not found'});
-
-      const updatedSupplier = await SupplierModel.findByIdAndUpdate(
-        id,
-        { supplierName , companyName , email },
-        { new: true }
-      );
-      res.json(updatedSupplier);
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating product', error });
+    const { supplierName, companyName, email } = req.body;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid supplier ID format' });
     }
-  });
-  
+
+    const updatedSupplier = await SupplierModel.findByIdAndUpdate(
+      id,
+      { supplierName, companyName, email },
+      { new: true, runValidators: true } 
+    );
+
+    if (!updatedSupplier) {
+      return res.status(404).json({ message: 'Supplier not found' });
+    }
+
+    res.json(updatedSupplier);
+  } catch (error) {
+    console.error('Update error:', error); 
+    res.status(500).json({ 
+      message: 'Error updating supplier',
+      error: error.message 
+    });
+  }
+});
+
+
+app.delete('/deletesupplier/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid supplier ID' });
+    }
+    const supplier = await SupplierModel.findByIdAndDelete(id);
+
+    if (!supplier) {
+      return res.status(404).json({ message: 'Supplier not found' });
+    }
+    return res.status(200).json({ message: 'Supplier deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting supplier:', error);
+    return res.status(500).json({ message: 'Server error while deleting supplier' });
+  }
+});
+
 
 
 // Start the server

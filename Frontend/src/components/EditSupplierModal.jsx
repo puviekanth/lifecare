@@ -12,7 +12,7 @@ const EditSupplierModal = ({ showEditModal, setShowEditModal, formData, handleCh
         >
           <FiX />
         </button>
-        <h3 className="text-2xl font-semibold mb-6 text-blue-900">Edit Product</h3>
+        <h3 className="text-2xl font-semibold mb-6 text-blue-900">Edit Supplier</h3>
         <form onSubmit={handleUpdate} className="space-y-6">
           <div className="space-y-4">
             <div className="flex flex-col gap-1">
@@ -48,6 +48,17 @@ const EditSupplierModal = ({ showEditModal, setShowEditModal, formData, handleCh
                 value={formData.email || ''}
                 onChange={handleChange}
                 placeholder="Supplier Email"
+                className="border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Phone</label>
+              <input
+                type="text" // Changed to text to handle various phone number formats
+                name="phone"
+                value={formData.phone || ''}
+                onChange={handleChange}
+                placeholder="Supplier Phone"
                 className="border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>

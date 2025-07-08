@@ -48,7 +48,7 @@ const AddMedicine = () => {
         headers: { 'Content-Type': 'multipart/form-data' }, 
       });
       console.log('Successfully Added', response.data);
-      navigate('/'); 
+      navigate('/inventory'); 
     } catch (error) {
       console.error('Error Adding the product:', error);
       setError(error.response?.data?.message || 'Failed to add product. Please try again.');
@@ -56,7 +56,7 @@ const AddMedicine = () => {
   };
 
   const handleCancel = () => {
-    navigate('/'); // Navigate back to home or reset form
+    navigate('/inventory'); // Navigate back to home or reset form
   };
 
   return (

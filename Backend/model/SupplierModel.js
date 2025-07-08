@@ -10,7 +10,7 @@ const SupplierSchema = new mongoose.Schema({
     required: true 
   },
   email: String,
-  contact:String,
+  phone:Number,
 });
 
 const SupplierModel = mongoose.model('Supplier', SupplierSchema);

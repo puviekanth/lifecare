@@ -80,7 +80,7 @@ const ProductDetails = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center px-4 py-8">
       <div className="bg-white shadow-xl rounded-2xl max-w-4xl w-full p-6 relative">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/inventory')}
           className="absolute top-4 right-4 text-xl text-gray-500 hover:text-black"
         >
           <FiX />
@@ -149,7 +149,7 @@ const ProductDetails = () => {
 
         <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/inventory')}
             className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100"
           >
             Close
