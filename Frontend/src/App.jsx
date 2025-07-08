@@ -12,6 +12,8 @@ import Suppliers from './pages/Suppliers'
 import AddSuppliers from './pages/AddSupplier'
 import Home from './pages/Home';
 import ViewProduct from './pages/ViewProduct';
+import Profile from './pages/Profile';
+import Products from './pages/Products';
 
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
           <Route path='/register' element={<Signup />} />
           <Route path='/suppliers' element={<Suppliers />} />
           <Route path='/addSuppliers' element={<AddSuppliers />} />
+          <Route path='/profile' element={<Profile />} />
+          <Route path='/products' element={<Products />} />
         </Routes>
       </div>
       <Footer />

@@ -351,6 +351,81 @@ app.delete('/deletesupplier/:id', async (req, res) => {
 });
 
 
+app.get('/profile',authenticateJWT, async (req,res)=>{
+    try {
+        const email = req.user.email;
+        const currentUser = await CustomerModel.findOne({email:email});
+        if(!currentUser){
+            return res.status(500).json({error:'No Record Exists'});
+        }
+       return res.status(201).json({
+            name:currentUser.name,
+            email:currentUser.email,
+            contact:currentUser.contact,
+        });
+    } catch (error) {
+        return res.status(500).json({error:'Failed to retrieve user data'});
+    }
+});
+
+//update profile
+app.put('/updateProfile', authenticateJWT, async (req, res) => {
+    try {
+        const email = req.user.email; 
+        const { name } = req.body;
+        const updatedUser = await CustomerModel.findOneAndUpdate(
+            { email: email },  
+            { name },
+            { new: true }  
+        );
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User Not Found' });
+        }
+        return res.status(200).json({ message: 'User Updated Successfully', updatedUser });
+    } catch (error) {
+        console.log('Error updating profile', error);
+        return res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
+//update the password
+app.put('/updatepassword', authenticateJWT, async (req, res) => {
+  try {
+    const email = req.user.email;
+    const { currentPassword, newPassword } = req.body;
+    const user = await CustomerModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Incorrect current password' });
+    }
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+    const updatedUser = await CustomerModel.findOneAndUpdate(
+      { email },
+      { password: hashedNewPassword },
+      { new: true }
+    );
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error updating password:', error);
+    res.status(500).json({ message: 'Server error when updating the password' });
+  }
+});
+
+//get products in e-commerce side
+app.get('/getproductsOTC', async (req, res) => {
+  try {
+    const products = await ProductModel.find({ category:'OTC'});
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ message: 'Error fetching products' });
+  }
+});
+
+
 
 // Start the server
 app.listen(3000, () => {
