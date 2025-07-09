@@ -12,6 +12,7 @@ const saltRounds = 10;
 const secretKey = 'lifecare/AGILE/y3s2';
 const AdminModel = require('./model/AdminModel');
 const CartModel = require('./model/CartModel');
+const OrderModel = require('./model/OrderModel');
 
 const app = express();
 
@@ -493,7 +494,7 @@ app.post('/addtocart',authenticateJWT,async (req,res)=>{
     const product = await ProductModel.findById(cartItem.ProductId);
     product.quantity+=1;
     await product.save();
-    
+
     const  deletedproduct = await CartModel.findOneAndDelete({
       email:email , _id:id
     });
@@ -524,7 +525,54 @@ app.post('/addtocart',authenticateJWT,async (req,res)=>{
       console.error('Server side error when fetching the cart products.');
     }
 
-  })
+  });
+
+//get the user email before saving the details
+  app.get('/getuser', authenticateJWT, async (req, res) => {
+  try {
+    return res.status(200).json({ email: req.user.email });
+  } catch (error) {
+    console.error('Error fetching user:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+
+  //place order code
+app.post('/saveorder', authenticateJWT, async (req, res) => {
+  const { cartItems, email, deliveryMethod, deliveryDetails, orderToken } = req.body;
+
+  
+  if (!cartItems || !email || !deliveryMethod) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+  if (deliveryMethod === 'home' && !deliveryDetails) {
+    return res.status(400).json({ message: 'Delivery details required for home delivery' });
+  }
+  if (deliveryMethod === 'instore' && !orderToken) {
+    return res.status(400).json({ message: 'Order token required for in-store pickup' });
+  }
+
+  try {
+    const newOrder = new OrderModel({
+      email,
+      cartItems,
+      deliveryMethod,
+      deliveryDetails: deliveryMethod === 'home' ? deliveryDetails : null,
+      orderToken: deliveryMethod === 'instore' ? orderToken : null,
+    });
+
+    await newOrder.save();
+
+    
+    await CartModel.deleteMany({ email });
+
+    return res.status(200).json({ message: 'Order saved successfully' });
+  } catch (error) {
+    console.error('Error saving order:', error.message);
+    return res.status(500).json({ error: 'Failed to save order' });
+  }
+});
 
   
 

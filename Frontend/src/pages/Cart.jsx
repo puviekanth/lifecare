@@ -4,6 +4,7 @@ import EHeader from '../components/EHeader';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -85,6 +86,10 @@ const CartPage = () => {
     const deliveryFee = 600;
     return (parseFloat(calculateTotal()) + deliveryFee).toFixed(2);
   };
+
+  const handleCheckout = () =>{
+    navigate('/checkout');
+  }
 
   return (
     <div className="flex flex-col min-h-screen" role="main" aria-label="Shopping Cart">
@@ -171,7 +176,7 @@ const CartPage = () => {
                     </tr>
                   </tbody>
                 </table>
-                <button
+                <button onClick={handleCheckout}
                   className="w-full bg-blue-600 text-white py-3 rounded-md mt-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   aria-label="Proceed to Checkout"
                 >
