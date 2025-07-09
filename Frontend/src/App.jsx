@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import Products from './pages/Products';
 import ViewProduct from './pages/ProductDescription';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
 
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
           <Route path='/products' element={<Products />} />
           <Route path="/view/:id" element={<ViewProduct />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path='/checkout' element={<Checkout />}/>
         </Routes>
       </div>
       <Footer />
