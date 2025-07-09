@@ -38,6 +38,8 @@ const Profile = () => {
         setUser({
           username: response.data.name || '',
           email: response.data.email || '',
+          phone : response.data.phone || '',
+          address : response.data.address || '',
           profilePicture: response.data.profilePicture || 'https://via.placeholder.com/150',
         });
       })
@@ -71,6 +73,8 @@ const Profile = () => {
         {
           name: user.username,
           email: user.email,
+          phone : user.phone,
+          address : user.address,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -212,6 +216,42 @@ const Profile = () => {
                     disabled={true} // Disable during API request
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-indigo-400 focus:outline-none transition-all duration-200 disabled:bg-gray-100"
                   />
+                </motion.div>
+                <motion.div
+                  key="phone"
+                  variants={fieldVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: 0.2 }}
+                  className="w-full max-w-md"
+                >
+                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Contact</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={user.phone}
+                    onChange={handleChange}
+                    disabled={!editing || loading} // Disable during API request
+                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-indigo-400 focus:outline-none transition-all duration-200 disabled:bg-gray-100"
+                  />
+                  <motion.div
+                  key="address"
+                  variants={fieldVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: 0.2 }}
+                  className="w-full max-w-md"
+                >
+                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Address</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={user.address}
+                    onChange={handleChange}
+                    disabled={!editing || loading} // Disable during API request
+                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-indigo-400 focus:outline-none transition-all duration-200 disabled:bg-gray-100"
+                  />
+                </motion.div>
                 </motion.div>
               </AnimatePresence>
             </div>

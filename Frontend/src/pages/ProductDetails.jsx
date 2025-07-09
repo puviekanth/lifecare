@@ -93,7 +93,7 @@ const ProductDetails = () => {
               <img
                 src={`http://localhost:3000/${product.image.replace(/\\/g, '/')}`}
                 alt={product.productName || 'Product Image'}
-                className="w-full h-48 object-cover rounded-md"
+                className="w-full h-auto max-h-64 object-contain rounded-md"
               />
             ) : (
               <div className="w-full h-48 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 border border-dashed">

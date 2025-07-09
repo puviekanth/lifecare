@@ -4,21 +4,37 @@ import { FiBell, FiMenu, FiX , FiShoppingCart} from 'react-icons/fi';
 import {jwtDecode} from 'jwt-decode'; // Browser-compatible JWT decoding
 import logo from '../assets/images/logo.png';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const EHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
+  const [letter,setLetter] = useState('');
+  const api = 'http://localhost:3000';
+  const [number,setNumber] = useState('');
+  useEffect( () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
         jwtDecode(token); // Decode token (no verification needed for client-side)
         setIsLoggedIn(true);
+         axios.get(`${api}/getLetter`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res)=>{
+        setLetter(res.data.letter);
+        setNumber(res.data.number);
+      })
+      .catch((error)=>{
+        console.error('Error fetching the user letter',error)
+      });
       } catch (error) {
         setIsLoggedIn(false);
         localStorage.removeItem('token');
       }
+
+      
+
     } else {
       setIsLoggedIn(false);
     }
@@ -73,14 +89,16 @@ const EHeader = () => {
             <>
 
             <div className="relative">
+              <Link to={'/cart'}>
                 <FiShoppingCart className="text-xl text-white" />
                 <span className="absolute -top-2 -right-2 bg-yellow-400 text-blue-800 text-xs w-4 h-4 flex items-center justify-center rounded-full font-semibold shadow-sm">
-                  3
+                  {number}
                 </span>
+                </Link>
               </div>
               
               <Link to='/profile' className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
-                A
+                {letter}
               </Link>
             </>
           ) : (
@@ -92,7 +110,7 @@ const EHeader = () => {
                 Login
               </NavLink>
               <NavLink
-                to="/signup"
+                to="/register"
                 className="text-white hover:text-yellow-200 transition bg-green-500 px-4 py-1 rounded-md"
               >
                 Sign Up
@@ -125,7 +143,7 @@ const EHeader = () => {
                 </span>
               </div>
                   <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
-                    A
+                    {letter}
                   </div>
                 </>
               ) : (
@@ -138,7 +156,7 @@ const EHeader = () => {
                     Login
                   </NavLink>
                   <NavLink
-                    to="/signup"
+                    to="/register"
                     onClick={toggleMenu}
                     className="text-white hover:text-yellow-200 transition bg-green-500 px-4 py-1 rounded-md"
                   >

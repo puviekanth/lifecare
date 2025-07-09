@@ -10,6 +10,8 @@ const ProductModel = require('./model/MedicineModel');
 const SupplierModel = require('./model/SupplierModel');
 const saltRounds = 10;
 const secretKey = 'lifecare/AGILE/y3s2';
+const AdminModel = require('./model/AdminModel');
+const CartModel = require('./model/CartModel');
 
 const app = express();
 
@@ -64,7 +66,7 @@ mongoose.connect("mongodb://localhost:27017/lifecare", {
 app.post('/signup', async (req, res) => {
     try {
         
-        const { name, email, password } = req.body;
+        const { name, email, password , phone , address } = req.body;
 
         // Hash the password
         const encryptedPassword = await bcrypt.hash(password, saltRounds);
@@ -76,6 +78,8 @@ app.post('/signup', async (req, res) => {
                 name,
                 password: encryptedPassword,
                 email,
+                phone,
+                address,
             });
             res.status(200).json({ message: 'Admin User Created Successfully', user: adminUser });
 
@@ -85,6 +89,8 @@ app.post('/signup', async (req, res) => {
                 name,
                 password: encryptedPassword,
                 email,
+                phone,
+                address,
             });
 
             // Respond with success
@@ -361,7 +367,8 @@ app.get('/profile',authenticateJWT, async (req,res)=>{
        return res.status(201).json({
             name:currentUser.name,
             email:currentUser.email,
-            contact:currentUser.contact,
+            phone:currentUser.phone,
+            address:currentUser.address,
         });
     } catch (error) {
         return res.status(500).json({error:'Failed to retrieve user data'});
@@ -372,10 +379,10 @@ app.get('/profile',authenticateJWT, async (req,res)=>{
 app.put('/updateProfile', authenticateJWT, async (req, res) => {
     try {
         const email = req.user.email; 
-        const { name } = req.body;
+        const { name , phone , address } = req.body;
         const updatedUser = await CustomerModel.findOneAndUpdate(
             { email: email },  
-            { name },
+            { name , phone , address },
             { new: true }  
         );
         if (!updatedUser) {
@@ -425,7 +432,101 @@ app.get('/getproductsOTC', async (req, res) => {
   }
 });
 
+//get the profile letter
+app.get('/getLetter', authenticateJWT , async (req,res)=>{
+  try{
+    const email = req.user.email;
+    const user = await CustomerModel.findOne({email});
+    if(!user){
+      res.status(404).json({message:'User not found'});
+    }
+    const username = user.name;
+    const letter = username.charAt(0).toUpperCase();
+    const items = await CartModel.find({email});
+    const number = items.length;
+    res.status(200).json({letter,number});
+  }catch(error){
+    console.error('Error on the server side');
+  }
+});
 
+//add to cart
+app.post('/addtocart',authenticateJWT,async (req,res)=>{
+    const {productId, ProductName,ProductPrice,ProductQuantity,Subtotal,Image} = req.body;
+   try {
+    const product = await ProductModel.findById(productId);
+    if(!product){
+      console.error('No product found');
+      return res.status(404).json({message:'No product found'});
+    }
+    product.quantity-=1;
+    await product.save();
+    const newItem = new CartModel({
+        ProductId:productId,
+        ProductName,
+        email:req.user.email,
+        ProductPrice,
+        ProductQuantity,
+        Subtotal,
+        Image
+    });
+
+    await newItem.save();
+    return res.status(200).json({message:'Product Added to Cart Successfully'})
+   } catch (error) {
+    console.log("Something went wrong in the server");
+    return res.status(500).json({error:'Something went wrong in the server'})
+   }
+
+  });
+
+
+  //delete product in the cart
+  app.delete('/deletecartproduct/:id', authenticateJWT , async (req,res)=>{
+    try{
+    const email = req.user.email;
+    if(!email){
+      return res.status(400).json({message:'Unauthorized access'});
+    }
+    const { id } = req.params;
+    const cartItem = await CartModel.findById(id);
+    const product = await ProductModel.findById(cartItem.ProductId);
+    product.quantity+=1;
+    await product.save();
+    
+    const  deletedproduct = await CartModel.findOneAndDelete({
+      email:email , _id:id
+    });
+    if(!deletedproduct){
+      res.status(404).json({message:'No products found'});
+    }
+    res.status(200).json({message:'Product Deleted Successfully from the cart'});
+    }catch(error){
+      return res.status(500).json({message:'Server side error when deleting the product'});
+    }
+
+  });
+
+  //get cart items
+
+  app.get('/getcartitems', authenticateJWT , async (req,res)=>{
+    try{
+      const email = req.user.email;
+      if(!email){
+        res.status(400).json({message:'Unauthorized access'});
+      }
+      const products = await CartModel.find({email});
+      if(!products){
+        res.status(404).json({message:'No products found in the cart'});
+      }
+      res.status(200).json(products);
+    }catch(error){
+      console.error('Server side error when fetching the cart products.');
+    }
+
+  })
+
+  
 
 // Start the server
 app.listen(3000, () => {
