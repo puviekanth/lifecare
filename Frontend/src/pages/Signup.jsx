@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import EHeader from '../components/EHeader';
 
 function Signup() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone,setPhone] = useState('');
+  const [ address , setAddress] = useState('');
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const api = 'http://localhost:3000';
@@ -15,6 +18,7 @@ function Signup() {
   const validateForm = () => {
     const newErrors = {};
     const emailRegex = /^[^\s@]+(\.admin)?@lifecare\.com$|^[^\s@]+@(gmail\.com|outlook\.com|hotmail\.com|icloud\.com)$/;
+    
 
     if (!email || !emailRegex.test(email)) {
       newErrors.email = 'Please enter a valid email address';
@@ -28,6 +32,12 @@ function Signup() {
     if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
+    if(phone.length!=10){
+      newErrors.phone = 'Contact should have 10 digits';
+    }
+    if(!address){
+      newErrors.address = 'Please enter an address';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -36,7 +46,7 @@ function Signup() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      axios.post(`${api}/signup`, { name, email, password })
+      axios.post(`${api}/signup`, { name, email, password , phone , address })
         .then(result => {
           console.log(result);
           navigate('/login');
@@ -52,6 +62,8 @@ function Signup() {
   };
 
   return (
+    <>
+    <EHeader />
     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-4">Sign Up</h2>
       {serverError && <p className="text-red-500 text-sm text-center mb-4">{serverError}</p>}
@@ -108,6 +120,32 @@ function Signup() {
           />
           {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
         </div>
+        <div className="mb-4">
+          <label htmlFor="phone" className="sr-only">Contact</label>
+          <input
+            id="phone"
+            type="text"
+            placeholder="Enter the Contact"
+            className="w-full p-2 border rounded"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+          />
+          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+        </div>
+        <div className="mb-4">
+          <label htmlFor="q=address" className="sr-only">Address</label>
+          <input
+            id="address"
+            type="text"
+            placeholder="Enter Address"
+            className="w-full p-2 border rounded"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            required
+          />
+          {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+        </div>
         <button
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded mb-4"
@@ -132,6 +170,7 @@ function Signup() {
         </p>
       </form>
     </div>
+  </>    
   );
 }
 

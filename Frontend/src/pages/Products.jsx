@@ -3,6 +3,7 @@ import { FiSearch, FiFilter, FiX, FiStar, FiShoppingCart } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import EHeader from '../components/EHeader';
+import { Link, useNavigate } from 'react-router-dom';
 
 const categories = ['All', 'Vitamins', 'Foods', 'Sanitary', 'Cosmetics', 'Supplements'];
 
@@ -14,8 +15,9 @@ const Products = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const api = 'http://localhost:3000'; // Replace with your actual API base URL
+  const api = 'http://localhost:3000';
 
   useEffect(() => {
     setIsLoading(true);
@@ -23,7 +25,7 @@ const Products = () => {
       try {
         const response = await axios.get(`${api}/getproductsOTC`);
         let result = Array.isArray(response.data) ? response.data : [];
-        console.log('Fetched products:', result); // Debug API response
+        console.log('Fetched products:', result);
 
         if (searchTerm) {
           result = result.filter(product =>
@@ -64,10 +66,50 @@ const Products = () => {
     hover: { y: -5, scale: 1.02, transition: { duration: 0.2 } }
   };
 
+  const handleAddToCart = (product) => {
+    if (product.quantity <= 0) {
+      console.log("Out of Stock");
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found, please login');
+      navigate('/login');
+      return;
+    }
+
+    axios.post(`${api}/addtocart`, {
+      productId: product._id,
+      ProductName: product.productName,
+      ProductPrice: product.price,
+      ProductQuantity: 1,
+      Subtotal: product.price * 1,
+      Image: product.image,
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(response => {
+      console.log('Added to cart successfully', response.data);
+      // Update local state to reflect reduced quantity
+      setFilteredProducts(prevProducts =>
+        prevProducts.map(p => p._id === product._id ? { ...p, quantity: p.quantity - 1 } : p)
+      );
+    })
+    .catch(error => {
+      console.log('Error adding to cart', error.response?.data?.error || error.message);
+      // Re-fetch products if the server update fails to sync state
+      if (error.response?.status !== 400) { // Avoid re-fetch on out-of-stock
+        setFilteredProducts([]); // Reset or re-fetch could be implemented here
+        setError('Failed to add item. Please try again.');
+      }
+    });
+  };
+
   return (
     <>
       <EHeader />
-      <div className="container mx-auto px-4 py-12 bg-gray-50 min-h-screen">
+      <div className="container mx-auto px-4 py-12 bg-gray-50">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -256,55 +298,55 @@ const Products = () => {
             }}
           >
             {filteredProducts.map((product) => (
-              <motion.div 
-                key={product.id} 
-                variants={cardVariants}
-                whileHover="hover"
-                className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden"
-              >
-                <div className="h-56 bg-white flex items-center justify-center overflow-hidden">
-                  <motion.img 
-                    src={`${api}/${product.image}`} 
-                    alt={product.productName} 
-                    className="h-full w-full object-contain"
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }} // Fallback image
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
-                <div className="p-5">
-                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
-                    {product.category}
-                  </span>
-                  <h3 className="font-semibold text-lg mt-3 text-gray-800 line-clamp-2">{product.productName}</h3>
-                  {product.rating && (
-                    <div className="flex items-center mt-2">
-                      <div className="flex text-yellow-400">
+              <Link to={`/view/${product._id}`} key={product._id}>
+                <motion.div 
+                  variants={cardVariants}
+                  whileHover="hover"
+                  className="bg-white shadow-lg border border-gray-400 overflow-hidden p-2"
+                >
+                  <div className="h-56 bg-white flex items-center justify-center overflow-hidden">
+                    <motion.img 
+                      src={`${api}/${product.image}`} 
+                      alt={product.productName} 
+                      className="h-full w-full object-contain"
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <div className="p-5">
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
+                      {product.category}
+                    </span>
+                    <h3 className="font-semibold text-lg mt-3 text-gray-800 line-clamp-2">{product.productName}</h3>
+                    {product.rating && (
+                      <div className="flex items-center mt-2">
                         {[...Array(5)].map((_, i) => (
                           <FiStar 
                             key={i} 
                             fill={i < Math.floor(product.rating) ? 'currentColor' : 'none'} 
-                            className="w-5 h-5"
+                            className="w-5 h-5 text-yellow-400"
                           />
                         ))}
+                        <span className="text-sm text-gray-500 ml-2 font-medium">
+                          {product.rating.toFixed(1)}
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-500 ml-2 font-medium">
-                        {product.rating.toFixed(1)}
-                      </span>
+                    )}
+                    <div className="mt-4 flex justify-between items-center">
+                      <span className="font-bold text-xl text-gray-800">LKR {product.price.toFixed(2)}</span>
+                      <motion.button 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors duration-300"
+                        onClick={(e) => { e.preventDefault(); handleAddToCart(product); }}
+                      >
+                        <FiShoppingCart size={18} />
+                      </motion.button>
                     </div>
-                  )}
-                  <div className="mt-4 flex justify-between items-center">
-                    <span className="font-bold text-xl text-gray-800">LKR {product.price.toFixed(2)}</span>
-                    <motion.button 
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors duration-300"
-                    >
-                      <FiShoppingCart size={18} />
-                    </motion.button>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </Link>
             ))}
           </motion.div>
         ) : (

@@ -11,9 +11,10 @@ import Signup from './pages/Signup';
 import Suppliers from './pages/Suppliers'
 import AddSuppliers from './pages/AddSupplier'
 import Home from './pages/Home';
-import ViewProduct from './pages/ViewProduct';
 import Profile from './pages/Profile';
 import Products from './pages/Products';
+import ViewProduct from './pages/ProductDescription';
+import Cart from './pages/Cart';
 
 
 function App() {
@@ -22,7 +23,7 @@ function App() {
       
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          <Route path='/' element={< Login />}/>
+          <Route path='/' element={< Home />}/>
           <Route path='/home' element={<Home />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/addproduct" element={<AddMedicine />} />
@@ -34,6 +35,8 @@ function App() {
           <Route path='/addSuppliers' element={<AddSuppliers />} />
           <Route path='/profile' element={<Profile />} />
           <Route path='/products' element={<Products />} />
+          <Route path="/view/:id" element={<ViewProduct />} />
+          <Route path="/cart" element={<Cart />} />
         </Routes>
       </div>
       <Footer />
