@@ -93,23 +93,30 @@ const Checkout = () => {
   
   const handleDeliveryFormSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-    if (!token) {
+    
+    const authToken = localStorage.getItem('token');
+    if (!authToken) {
       setError('Please log in to proceed.');
       navigate('/login');
       return;
     }
+    
 
     try {
+        const userResponse = await axios.get(`${api}/getuser`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const userEmail = userResponse.data.email;
+
       await axios.post(
         `${api}/saveorder`,
         {
           cartItems,
-          email: localStorage.getItem('email'),
+          email: userEmail,
           deliveryMethod: 'home',
           deliveryDetails,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${authToken}` } }
       );
       setShowModal(false);
       setError(null);
