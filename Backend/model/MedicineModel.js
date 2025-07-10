@@ -7,6 +7,8 @@ const medicineSchema = new mongoose.Schema({
     category: String,
     image: String,
     quantity:Number,
+    manufactureDate:Date,
+    expiryDate:Date,
     companyName:String,
     supplierID:String
   });

@@ -3,6 +3,19 @@ import { FiX } from 'react-icons/fi';
 const EditProductModal = ({ showEditModal, setShowEditModal, formData, handleChange, handleUpdate }) => {
   if (!showEditModal) return null;
 
+  // Function to format date to YYYY-MM-DD for input type="date"
+  const formatDateForInput = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) {
+      console.warn(`Invalid date received: ${date}`);
+      return '';
+    }
+    return d.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+  };
+
+  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4 py-4">
       <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
@@ -13,7 +26,10 @@ const EditProductModal = ({ showEditModal, setShowEditModal, formData, handleCha
           <FiX />
         </button>
         <h3 className="text-2xl font-semibold mb-6 text-blue-900">Edit Product</h3>
-        <form onSubmit={handleUpdate} className="space-y-6">
+        <form onSubmit={(e) => {
+          console.log('Submitting form with formData:', formData);
+          handleUpdate(e);
+        }} className="space-y-6">
           <div className="space-y-4">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">Image</label>
@@ -96,6 +112,28 @@ const EditProductModal = ({ showEditModal, setShowEditModal, formData, handleCha
                 <option value="A2">A2</option>
                 <option value="A3">A3</option>
               </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Manufacture Date</label>
+              <input
+                type="date"
+                name="manufactureDate"
+                value={formatDateForInput(formData.manufactureDate)}
+                onChange={handleChange}
+                className="border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Expiry Date</label>
+              <input
+                type="date"
+                name="expiryDate"
+                value={formatDateForInput(formData.expiryDate)}
+                onChange={handleChange}
+                className="border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
             </div>
           </div>
           <div className="flex flex-col gap-1">

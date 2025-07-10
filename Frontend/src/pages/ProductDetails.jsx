@@ -55,6 +55,8 @@ const ProductDetails = () => {
     data.append('companyName', formData.companyName || '');
     data.append('category', formData.category || '');
     data.append('description', formData.description || '');
+     data.append('manufactureDate', formData.manufactureDate || '');
+      data.append('expiryDate', formData.expiryDate || '');
     if (formData.image) {
       data.append('image', formData.image); // Send file or original path
     }
@@ -133,6 +135,26 @@ const ProductDetails = () => {
             <div className="mb-3">
               <p className="text-sm text-gray-500">Supplier Company Name</p>
               <p className="text-sm text-gray-800">{product.companyName}</p>
+            </div>
+            <div className="mb-3">
+              <p className="text-sm text-gray-500">Manufacture Date</p>
+              <p className="text-sm text-gray-800">{product.manufactureDate?.slice(0, 10)}</p>
+            </div>
+             <div className="mb-3">
+              <p className="text-sm text-gray-500">Expiry Date</p>
+              <p className="text-sm text-gray-800">{product.expiryDate?.slice(0, 10)}</p>
+            </div>
+            <div className="mb-3">
+              <p className="text-sm text-gray-500">Expiry Date</p>
+              <p className="text-sm">{(() => {
+                        const today = new Date();
+                        const expiry = new Date(product.expiryDate);
+                        const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                        if (diffDays < 0) return <span className="text-red-600 font-bold">Expired</span>;
+                        if (diffDays <= 10 && diffDays >= 0) return <span className="text-orange-500 font-semibold">Expires in {diffDays} days</span>;
+                        if (diffDays <= 30) return <span className="text-yellow-600 font-semibold">Expiring soon</span>;
+                        return <span className="text-green-600">Safe to use</span>;
+                      })()}</p>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mt-4">
               <div className="flex justify-between text-sm font-semibold text-gray-700">

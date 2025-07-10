@@ -180,7 +180,7 @@ app.post('/login', async (req, res) => {
   
   // Add new product
  app.post('/addproduct', uploadMedicine.single('image'), async (req, res) => {
-  const { medicineName, price, otcStatus , companyName,  quantity, description} = req.body;
+  const { medicineName, price, otcStatus , companyName,  quantity, description , manufactureDate , expiryDate} = req.body;
   
   if (!req.file) return res.status(400).json({ message: 'Image is required' });
   const imagePath = req.file.path;
@@ -196,6 +196,8 @@ app.post('/login', async (req, res) => {
       price,
       category: otcStatus,
       quantity,
+      manufactureDate,
+      expiryDate,
       companyName,
       supplierID: supplier._id,
       image: imagePath
@@ -213,35 +215,73 @@ app.post('/login', async (req, res) => {
   
   // Update existing product
   app.put('/updateproduct/:id', uploadMedicine.single('image'), async (req, res) => {
-    const { id } = req.params;
-    const { productName , description, price, category,quantity , companyName } = req.body;
-    
-    
+  const { id } = req.params;
+  const { productName, description, price, category, quantity, companyName, manufactureDate, expiryDate } = req.body;
 
-    try {
-      let imagePath;
+  
+
+  try {
+    // Validate and parse dates
+    const parsedManufactureDate = manufactureDate ? new Date(manufactureDate) : null;
+    const parsedExpiryDate = expiryDate ? new Date(expiryDate) : null;
+
+    if (manufactureDate && isNaN(parsedManufactureDate?.getTime())) {
+      return res.status(400).json({ message: 'Invalid manufacture date' });
+    }
+    if (expiryDate && isNaN(parsedExpiryDate?.getTime())) {
+      return res.status(400).json({ message: 'Invalid expiry date' });
+    }
+
+    // Handle image
+    let imagePath;
     if (req.file) {
       imagePath = req.file.path;
-    }else if(req.body.image){
+    } else if (req.body.image) {
       imagePath = req.body.image;
-    }else{
-      return res.status(400).json({'message':'No Image provided'});
+    } else {
+      return res.status(400).json({ message: 'No image provided' });
     }
-      const supplier = SupplierModel.findOne({companyName});
 
-    if(!supplier)
-      return res.status(404).json({ message: 'Supplier not found'});
-
-      const updatedProduct = await ProductModel.findByIdAndUpdate(
-        id,
-        { productName, description, price, category, image: imagePath , quantity , companyName , supplierID : supplier._id },
-        { new: true }
-      );
-      res.json(updatedProduct);
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating product', error });
+    // Find supplier
+    const supplier = await SupplierModel.findOne({ companyName });
+    if (!supplier) {
+      return res.status(404).json({ message: 'Supplier not found' });
     }
-  });
+
+    // Prepare update object, only include fields that were provided
+    const updateData = {
+      ...(productName && { productName }),
+      ...(description && { description }),
+      ...(price && { price }),
+      ...(category && { category }),
+      ...(imagePath && { image: imagePath }),
+      ...(quantity && { quantity }),
+      ...(companyName && { companyName }),
+      ...(supplier && { supplierID: supplier._id }),
+      ...(parsedManufactureDate && { manufactureDate: parsedManufactureDate }),
+      ...(parsedExpiryDate && { expiryDate: parsedExpiryDate }),
+    };
+
+  
+
+    // Update product
+    const updatedProduct = await ProductModel.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ message: 'Error updating product', error: error.message });
+  }
+});
   
   // Delete a product
   app.delete('/deleteproduct/:id', async (req, res) => {
