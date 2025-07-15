@@ -81,7 +81,6 @@ const uploadMedicalRecords = multer({
   fileFilter: medicalRecordsFileFilter,
   limits: { fileSize: 1024 * 1024 * 5 } // 5MB limit
 }).single('medicalRecords');
-
 mongoose.connect("mongodb://localhost:27017/lifecare", {
   useNewUrlParser: true,
   useUnifiedTopology: true
