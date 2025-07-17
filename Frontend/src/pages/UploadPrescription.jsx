@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const UploadPrescription = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -12,21 +13,35 @@ const UploadPrescription = () => {
     address: '',
     city: '',
     state: '',
-    zip: ''
+    zip: '',
   });
   const fileInputRef = useRef(null);
+  const api = 'http://localhost:3000';
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    console.log('Token is ', token);
+    if (!token) {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    if (file && file.type.startsWith('image/')) {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (file && allowedTypes.includes(file.type)) {
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result);
+        setPreview(file.type.startsWith('image/') ? reader.result : null);
       };
-      reader.readAsDataURL(file);
+      if (file.type.startsWith('image/')) {
+        reader.readAsDataURL(file);
+      }
     } else {
-      alert('Please upload a valid image file.');
+      alert('Please upload a valid file (JPEG, JPG, PNG, or PDF).');
     }
   };
 
@@ -35,7 +50,7 @@ const UploadPrescription = () => {
     if (selectedFile) {
       setIsDeliveryModalOpen(true);
     } else {
-      alert('Please select a prescription image to upload.');
+      alert('Please select a prescription file to upload.');
     }
   };
 
@@ -51,9 +66,9 @@ const UploadPrescription = () => {
   const handleDeliveryOption = (option) => {
     setDeliveryOption(option);
     setIsDeliveryModalOpen(false);
-    if (option === 'home-delivery') {
+    if (option === 'home') {
       setIsAddressModalOpen(true);
-    } else if (option === 'in-store-pickup') {
+    } else if (option === 'instore') {
       const generatedToken = generateTokenNumber();
       setTokenNumber(generatedToken);
       setIsTokenModalOpen(true);
@@ -64,7 +79,7 @@ const UploadPrescription = () => {
     event.preventDefault();
     const { address, city, state, zip } = addressDetails;
     if (address && city && state && zip) {
-      submitFormData('home-delivery', null, addressDetails);
+      submitFormData('home', null, addressDetails);
       setIsAddressModalOpen(false);
     } else {
       alert('Please fill in all address fields.');
@@ -72,17 +87,22 @@ const UploadPrescription = () => {
   };
 
   const handleTokenModalClose = () => {
-    submitFormData('in-store-pickup', tokenNumber);
+    submitFormData('instore', tokenNumber);
     setIsTokenModalOpen(false);
   };
 
   const submitFormData = async (option, token = null, address = null) => {
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) {
+      alert('Please log in to continue.');
+      navigate('/login');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('prescription', selectedFile);
     formData.append('deliveryOption', option);
-    if (token) {
-      formData.append('tokenNumber', token);
-    }
+    if (token) formData.append('tokenNumber', token);
     if (address) {
       formData.append('address', address.address);
       formData.append('city', address.city);
@@ -91,10 +111,12 @@ const UploadPrescription = () => {
     }
 
     try {
-      const response = await fetch('/api/upload-prescription', {
+      const response = await fetch(`${api}/prescriptionUpload`, {
         method: 'POST',
         body: formData,
+        headers: { Authorization: `Bearer ${currentToken}` },
       });
+      console.log('Response:', response);
       if (response.ok) {
         alert('Prescription uploaded successfully!');
         setSelectedFile(null);
@@ -104,7 +126,9 @@ const UploadPrescription = () => {
         setAddressDetails({ address: '', city: '', state: '', zip: '' });
         fileInputRef.current.value = '';
       } else {
-        alert('Failed to upload prescription.');
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        alert(`Failed to upload prescription: ${errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error uploading prescription:', error);
@@ -118,12 +142,12 @@ const UploadPrescription = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="prescription" className="block text-sm font-medium text-gray-700">
-            Select Prescription Image
+            Select Prescription File
           </label>
           <input
             type="file"
             id="prescription"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,application/pdf"
             ref={fileInputRef}
             onChange={handleFileChange}
             className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -156,14 +180,14 @@ const UploadPrescription = () => {
               <button
                 type="button"
                 className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
-                onClick={() => handleDeliveryOption('home-delivery')}
+                onClick={() => handleDeliveryOption('home')}
               >
                 Home Delivery
               </button>
               <button
                 type="button"
                 className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
-                onClick={() => handleDeliveryOption('in-store-pickup')}
+                onClick={() => handleDeliveryOption('instore')}
               >
                 In-Store Pickup
               </button>

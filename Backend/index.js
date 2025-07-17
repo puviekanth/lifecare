@@ -12,6 +12,7 @@ const AdminModel = require('./model/AdminModel');
 const CartModel = require('./model/CartModel');
 const OrderModel = require('./model/OrderModel');
 const Consultation = require('./model/ConsultationModel'); // Import Consultation model
+const PrescriptionModel = require('./model/PrescriptionModel');
 
 const app = express();
 const saltRounds = 10;
@@ -82,12 +83,45 @@ const uploadMedicalRecords = multer({
   limits: { fileSize: 1024 * 1024 * 5 } // 5MB limit
 }).single('medicalRecords');
 
+
+// Multer storage for prescriptions
+const prescriptionStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/prescriptions'); 
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const prescriptionsFileFilter = (req, file, cb) => {
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only PDF, JPEG, JPG, and PNG are allowed for medical records.'), false);
+  }
+};
+
+const uploadPrescriptionRecords = multer({
+  storage: prescriptionStorage,
+  fileFilter: prescriptionsFileFilter,
+  limits: { fileSize: 1024 * 1024 * 5 } // 5MB limit
+}).single('prescription');
+
+
+
 mongoose.connect("mongodb://localhost:27017/lifecare", {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
   .then(() => console.log("Connected to MongoDB database: lifecare"))
   .catch(err => console.error("Failed to connect to MongoDB", err));
+
+
+
+
 
 // JWT Authentication Middleware
 const authenticateJWT = (req, res, next) => {
@@ -632,6 +666,40 @@ app.post('/book-consultation', authenticateJWT, uploadMedicalRecords, async (req
     res.status(500).json({ message: 'Failed to book consultation. Please try again.' });
   }
 });
+
+app.post('/prescriptionUpload',authenticateJWT , uploadPrescriptionRecords, async (req , res)=>{
+  try{
+    const email = req.user.email;
+    console.log(email);
+    const {deliveryOption, tokenNumber, address, city, state, zip} = req.body;
+    console.log(deliveryOption);
+  if (!req.file) return res.status(400).json({ message: 'Prescription is required' });
+  const prescriptionFilePath = req.file.path;
+  if (deliveryOption === 'instore' && !tokenNumber) {
+    return res.status(400).json({ message: 'Order token required for in-store pickup' });
+  }
+  const prescription = new PrescriptionModel({
+    email,
+    prescriptionFilePath,
+    deliveryMethod:deliveryOption,
+    deliveryDetails:deliveryOption==='home'? {
+      address,
+      city,
+      state,
+      zip
+    }:null,
+     orderToken: deliveryOption === 'instore' ? tokenNumber : null
+  });
+
+  await prescription.save();
+  return res.status(200).json({message:'Successfully added the prescription'});
+  }catch(error){
+    return res.status(500).json({message:'Server Error in uploading prescription'});
+  }
+});
+
+
+
 
 // Start the server
 app.listen(3000, () => {
