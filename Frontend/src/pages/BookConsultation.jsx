@@ -29,7 +29,7 @@ const BookConsultation = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const api = 'http://localhost:3000';
-  const googleApiKey = process.env.GOOGLE_GEOCODING_API;
+  const googleApiKey = import.meta.env.GOOGLE_GEOCODING_API;
 
   // Time slots (9:00 AM - 5:00 PM, 30-minute intervals)
   const timeSlots = [
