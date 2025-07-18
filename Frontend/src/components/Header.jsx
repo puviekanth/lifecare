@@ -14,6 +14,8 @@ const Header = () => {
     { to: "/inventory", label: "Inventory" },
     { to: "/suppliers", label: "Suppliers" },
     { to: "/reports", label: "Reports" },
+    { to: "/delivery-details", label: "Delivery Details" }, // NEW
+
   ];
 
   // Common styles for NavLink

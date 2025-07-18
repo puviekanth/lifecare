@@ -76,41 +76,49 @@ const UploadPrescription = () => {
     setIsTokenModalOpen(false);
   };
 
-  const submitFormData = async (option, token = null, address = null) => {
-    const formData = new FormData();
-    formData.append('prescription', selectedFile);
-    formData.append('deliveryOption', option);
-    if (token) {
-      formData.append('tokenNumber', token);
-    }
-    if (address) {
-      formData.append('address', address.address);
-      formData.append('city', address.city);
-      formData.append('state', address.state);
-      formData.append('zip', address.zip);
-    }
+ const submitFormData = async (option, token = null, address = null) => {
+  const formData = new FormData();
+  formData.append('medicalRecords', selectedFile); // must match backend
 
-    try {
-      const response = await fetch('/api/upload-prescription', {
-        method: 'POST',
-        body: formData,
-      });
-      if (response.ok) {
-        alert('Prescription uploaded successfully!');
-        setSelectedFile(null);
-        setPreview(null);
-        setDeliveryOption(null);
-        setTokenNumber(null);
-        setAddressDetails({ address: '', city: '', state: '', zip: '' });
-        fileInputRef.current.value = '';
-      } else {
-        alert('Failed to upload prescription.');
-      }
-    } catch (error) {
-      console.error('Error uploading prescription:', error);
-      alert('An error occurred while uploading.');
+  formData.append('deliveryOption', option);
+  if (token) formData.append('tokenNumber', token);
+  if (address) {
+    formData.append('address', address.address);
+    formData.append('city', address.city);
+    formData.append('state', address.state);
+    formData.append('zip', address.zip);
+  }
+
+  // Get token from localStorage (or however you're storing it after login)
+  const jwtToken = localStorage.getItem('token');
+
+  try {
+    const response = await fetch('http://localhost:3000/api/upload-prescription', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${jwtToken}`
+      },
+      body: formData
+    });
+
+    if (response.ok) {
+      alert('Prescription uploaded successfully!');
+      setSelectedFile(null);
+      setPreview(null);
+      setDeliveryOption(null);
+      setTokenNumber(null);
+      setAddressDetails({ address: '', city: '', state: '', zip: '' });
+      fileInputRef.current.value = '';
+    } else {
+      const errMsg = await response.text();
+      alert('Failed to upload prescription.\n' + errMsg);
     }
-  };
+  } catch (error) {
+    console.error('Error uploading prescription:', error);
+    alert('An error occurred while uploading.');
+  }
+};
+
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">

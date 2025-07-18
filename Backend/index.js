@@ -12,6 +12,8 @@ const AdminModel = require('./model/AdminModel');
 const CartModel = require('./model/CartModel');
 const OrderModel = require('./model/OrderModel');
 const Consultation = require('./model/ConsultationModel'); // Import Consultation model
+const Prescription = require('./model/PrescriptionModel');
+
 
 const app = express();
 const saltRounds = 10;
@@ -632,6 +634,91 @@ app.post('/book-consultation', authenticateJWT, uploadMedicalRecords, async (req
     res.status(500).json({ message: 'Failed to book consultation. Please try again.' });
   }
 });
+
+
+// Upload prescription (missing route)
+app.post('/api/upload-prescription', authenticateJWT, uploadMedicalRecords, async (req, res) => {
+  try {
+    const email = req.user.email;
+    const { deliveryOption, tokenNumber, address, city, state, zip } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded. Please attach a prescription.' });
+    }
+
+    const prescriptionPath = req.file.path;
+
+    const newPrescription = new Prescription({
+      email,
+      deliveryOption,
+      tokenNumber: tokenNumber || null,
+      address: address || null,
+      city: city || '',
+      state: state || '',
+      zip: zip || '',
+      filePath: prescriptionPath
+    });
+
+    await newPrescription.save();
+
+    return res.status(200).json({
+      message: 'Prescription uploaded and saved successfully!',
+      filePath: prescriptionPath
+    });
+  } catch (error) {
+    console.error('Error uploading prescription:', error);
+    return res.status(500).json({ message: 'Failed to upload prescription.' });
+  }
+
+  // GET all prescriptions
+app.get('/api/prescriptions', authenticateJWT, async (req, res) => {
+  try {
+    const all = await Prescription.find().sort({ uploadedAt: -1 });
+    res.status(200).json(all);
+  } catch (error) {
+    console.error('Failed to fetch prescriptions:', error);
+    res.status(500).json({ message: 'Error fetching delivery details' });
+  }
+});
+
+// DELETE prescription by ID
+app.delete('/api/prescriptions/:id', authenticateJWT, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Prescription.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Prescription deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete prescription:', error);
+    res.status(500).json({ message: 'Failed to delete delivery' });
+  }
+});
+});
+
+
+  // GET all prescriptions
+app.get('/api/prescriptions', authenticateJWT, async (req, res) => {
+  try {
+    const all = await Prescription.find().sort({ uploadedAt: -1 });
+    res.status(200).json(all);
+  } catch (error) {
+    console.error('Failed to fetch prescriptions:', error);
+    res.status(500).json({ message: 'Error fetching delivery details' });
+  }
+});
+
+// DELETE prescription by ID
+app.delete('/api/prescriptions/:id', authenticateJWT, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Prescription.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Prescription deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete prescription:', error);
+    res.status(500).json({ message: 'Failed to delete delivery' });
+  }
+});
+
+
 
 // Start the server
 app.listen(3000, () => {

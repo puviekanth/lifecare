@@ -18,6 +18,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import BookConsultation from './pages/BookConsultation';
 import UploadPrescription from './pages/UploadPrescription';
+import DeliveryDetails from './pages/DeliveryDetails';
 
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
           <Route path='/checkout' element={<Checkout />}/>
           <Route path='/consultation' element={<BookConsultation />}/>
           <Route path='/prescription' element={<UploadPrescription />} />
+          <Route path="/delivery-details" element={<DeliveryDetails />} />
         </Routes>
       </div>
       <Footer />
