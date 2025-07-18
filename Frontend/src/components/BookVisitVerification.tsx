@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScheduleAppointmentModal from './ScheduleAppointmentModal';
 import {
   Calendar,
   User,
@@ -123,13 +124,18 @@ const mockBookingRequests: BookingRequest[] = [
   }
 ];
 
-const BookVisitVerification: React.FC = () => {
+interface BookVisitVerificationProps {
+  onScheduleAppointment?: () => void;
+}
+
+const BookVisitVerification: React.FC<BookVisitVerificationProps> = ({ onScheduleAppointment }) => {
   const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>(mockBookingRequests);
   const [selectedBooking, setSelectedBooking] = useState<BookingRequest | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [verificationNotes, setVerificationNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -214,7 +220,10 @@ const BookVisitVerification: React.FC = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors duration-200">
+              <button 
+                onClick={() => setShowScheduleModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors duration-200"
+              >
                 <Calendar className="h-4 w-4" />
                 Schedule Appointment
               </button>
@@ -646,6 +655,12 @@ const BookVisitVerification: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Schedule Appointment Modal */}
+      <ScheduleAppointmentModal 
+        isOpen={showScheduleModal} 
+        onClose={() => setShowScheduleModal(false)} 
+      />
     </div>
   );
 };

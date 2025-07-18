@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import UploadPrescriptionModal from './UploadPrescriptionModal';
 import {
   FileText,
   User,
@@ -18,7 +19,12 @@ import {
   Shield,
   Camera,
   Pill,
-  Activity
+  Activity,
+  ChevronDown,
+  Package,
+  Truck,
+  Hash,
+  MapPin as Store
 } from 'lucide-react';
 
 interface Prescription {
@@ -102,14 +108,42 @@ const mockPrescriptions: Prescription[] = [
   }
 ];
 
-const PrescriptionVerification: React.FC = () => {
+interface PrescriptionVerificationProps {
+  onUploadPrescription?: () => void;
+}
+
+const PrescriptionVerification: React.FC<PrescriptionVerificationProps> = ({ onUploadPrescription }) => {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>(mockPrescriptions);
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [verificationNotes, setVerificationNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [showProcessingModal, setShowProcessingModal] = useState(false);
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [showTokenModal, setShowTokenModal] = useState(false);
+ 
+  const [processingPrescription, setProcessingPrescription] = useState<Prescription | null>(null);
+  const [deliveryDetails, setDeliveryDetails] = useState({
+    address: '',
+    city: '',
+    zipCode: '',
+    phone: '',
+    deliveryTime: 'standard',
+    specialInstructions: ''
+  });
+
+  const [tokenNumber, setTokenNumber] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [showTokenVerificationModal, setShowTokenVerificationModal] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const [tokenVerificationResult, setTokenVerificationResult] = useState<{
+    isValid: boolean;
+    prescription?: Prescription;
+    message: string;
+  } | null>(null);
 
   const filteredPrescriptions = prescriptions.filter(prescription => {
     const matchesSearch = prescription.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -157,6 +191,88 @@ const PrescriptionVerification: React.FC = () => {
     setRejectionReason('');
   };
 
+  const handleProcessPrescription = (prescription: Prescription, action: string) => {
+    setProcessingPrescription(prescription);
+    setDropdownOpen(null);
+    
+    switch (action) {
+      case 'process':
+        setPrescriptions(prev => prev.map(p => 
+          p.id === prescription.id ? { ...p, status: 'verified' } : p
+        ));
+        alert('Prescription is now being processed.');
+        break;
+      case 'complete':
+        setPrescriptions(prev => prev.map(p => 
+          p.id === prescription.id ? { ...p, status: 'dispensed' } : p
+        ));
+        alert('Prescription has been marked as complete and ready for pickup/delivery.');
+        break;
+      case 'delivery-request':
+        setShowDeliveryModal(true);
+        break;
+      case 'generate-token':
+        const newToken = 'TK' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        setTokenNumber(newToken);
+        setShowTokenModal(true);
+        break;
+    }
+  };
+
+  const handleDeliverySubmit = () => {
+    if (processingPrescription) {
+      setPrescriptions(prev => prev.map(p => 
+        p.id === processingPrescription.id ? { ...p, status: 'verified' } : p
+      ));
+    }
+    setShowDeliveryModal(false);
+    setDeliveryDetails({
+      address: '',
+      city: '',
+      zipCode: '',
+      phone: '',
+      deliveryTime: 'standard',
+      specialInstructions: ''
+    });
+    alert('Delivery request has been processed and scheduled successfully!');
+  };
+
+  const handleTokenVerification = () => {
+    // Find prescription by token (in real app, this would be a database lookup)
+    const foundPrescription = prescriptions.find(p => 
+      p.id === tokenInput.replace('TK', 'RX') // Simple mapping for demo
+    );
+
+    if (foundPrescription && foundPrescription.status === 'dispensed') {
+      setTokenVerificationResult({
+        isValid: true,
+        prescription: foundPrescription,
+        message: 'Valid token - Prescription ready for pickup'
+      });
+    } else if (foundPrescription) {
+      setTokenVerificationResult({
+        isValid: false,
+        prescription: foundPrescription,
+        message: 'Token found but prescription not ready for pickup'
+      });
+    } else {
+      setTokenVerificationResult({
+        isValid: false,
+        message: 'Invalid token - No prescription found'
+      });
+    }
+  };
+
+  const handleDispensePrescription = (prescriptionId: string) => {
+    setPrescriptions(prev => prev.map(p => 
+      p.id === prescriptionId ? { ...p, status: 'dispensed' } : p
+    ));
+    setShowTokenVerificationModal(false);
+    setTokenInput('');
+    setTokenVerificationResult(null);
+    alert('Prescription has been dispensed successfully!');
+  };
+
   const openVerificationModal = (prescription: Prescription) => {
     setSelectedPrescription(prescription);
     setShowVerificationModal(true);
@@ -178,9 +294,19 @@ const PrescriptionVerification: React.FC = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors duration-200">
+              <button 
+                onClick={() => setShowUploadModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors duration-200"
+              >
                 <Upload className="h-4 w-4" />
-                Upload Prescription
+                Upload New Prescription
+              </button>
+              <button 
+                onClick={() => setShowTokenVerificationModal(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors duration-200"
+              >
+                <Hash className="h-4 w-4" />
+                Verify Token
               </button>
               <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors duration-200">
                 <Download className="h-4 w-4" />
@@ -373,6 +499,53 @@ const PrescriptionVerification: React.FC = () => {
                         Verify
                       </button>
                     )}
+                    
+                    {prescription.status === 'verified' && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setDropdownOpen(dropdownOpen === prescription.id ? null : prescription.id)}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors duration-200 w-full"
+                        >
+                          <Package className="h-4 w-4" />
+                          Process
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                        
+                        {dropdownOpen === prescription.id && (
+                          <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                            <button
+                              onClick={() => handleProcessPrescription(prescription, 'process')}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                            >
+                              <Pill className="h-4 w-4" />
+                              Start Processing
+                            </button>
+                            <button
+                              onClick={() => handleProcessPrescription(prescription, 'complete')}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Mark Ready for Pickup
+                            </button>
+                            <hr className="border-gray-200" />
+                            <button
+                              onClick={() => handleProcessPrescription(prescription, 'delivery-request')}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                            >
+                              <Truck className="h-4 w-4" />
+                              Process Delivery Request
+                            </button>
+                            <button
+                              onClick={() => handleProcessPrescription(prescription, 'generate-token')}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 text-gray-700 rounded-b-lg"
+                            >
+                              <Hash className="h-4 w-4" />
+                              Generate Pickup Token
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -539,6 +712,323 @@ const PrescriptionVerification: React.FC = () => {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Token Verification Modal */}
+      {showTokenVerificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <Hash className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Verify Pickup Token</h3>
+                  <p className="text-gray-600">Enter customer's pickup token</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowTokenVerificationModal(false);
+                  setTokenInput('');
+                  setTokenVerificationResult(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              >
+                <X className="h-6 w-6 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Token Number
+                </label>
+                <input
+                  type="text"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center text-lg font-mono"
+                  placeholder="Enter token (e.g., TK4A7B9C)"
+                />
+              </div>
+
+              {tokenVerificationResult && (
+                <div className={`p-4 rounded-lg ${
+                  tokenVerificationResult.isValid 
+                    ? 'bg-green-50 border border-green-200' 
+                    : 'bg-red-50 border border-red-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {tokenVerificationResult.isValid ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-600" />
+                    )}
+                    <span className={`font-medium ${
+                      tokenVerificationResult.isValid ? 'text-green-800' : 'text-red-800'
+                    }`}>
+                      {tokenVerificationResult.message}
+                    </span>
+                  </div>
+                  
+                  {tokenVerificationResult.prescription && (
+                    <div className="text-sm space-y-1">
+                      <div><strong>Prescription ID:</strong> {tokenVerificationResult.prescription.id}</div>
+                      <div><strong>Patient:</strong> {tokenVerificationResult.prescription.patientName}</div>
+                      <div><strong>Doctor:</strong> {tokenVerificationResult.prescription.doctorName}</div>
+                      <div><strong>Status:</strong> {tokenVerificationResult.prescription.status}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h5 className="font-semibold text-blue-900 mb-2">Verification Steps:</h5>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>1. Enter the customer's pickup token</li>
+                  <li>2. Verify customer's ID matches prescription</li>
+                  <li>3. Confirm prescription details</li>
+                  <li>4. Dispense medication if valid</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowTokenVerificationModal(false);
+                  setTokenInput('');
+                  setTokenVerificationResult(null);
+                }}
+                className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleTokenVerification}
+                  disabled={!tokenInput.trim()}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors duration-200"
+                >
+                  Verify Token
+                </button>
+                
+                {tokenVerificationResult?.isValid && tokenVerificationResult.prescription && (
+                  <button
+                    onClick={() => handleDispensePrescription(tokenVerificationResult.prescription!.id)}
+                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200"
+                  >
+                    Dispense
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Prescription Modal */}
+      <UploadPrescriptionModal 
+        isOpen={showUploadModal} 
+        onClose={() => setShowUploadModal(false)} 
+      />
+
+      {/* Delivery Details Modal */}
+      {showDeliveryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Truck className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Process Delivery Request</h3>
+                  <p className="text-gray-600">Customer has requested delivery - enter delivery details</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeliveryModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              >
+                <X className="h-6 w-6 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {processingPrescription && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">Customer Delivery Request</h4>
+                  <div className="text-sm text-blue-800">
+                    <p><strong>ID:</strong> {processingPrescription.id}</p>
+                    <p><strong>Patient:</strong> {processingPrescription.patientName}</p>
+                    <p><strong>Doctor:</strong> {processingPrescription.doctorName}</p>
+                    <p className="mt-2 font-medium text-blue-900">Customer has requested home delivery for this prescription.</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Customer Delivery Address *
+                  </label>
+                  <textarea
+                    value={deliveryDetails.address}
+                    onChange={(e) => setDeliveryDetails({ ...deliveryDetails, address: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter customer's delivery address"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryDetails.city}
+                    onChange={(e) => setDeliveryDetails({ ...deliveryDetails, city: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter city"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ZIP Code *
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryDetails.zipCode}
+                    onChange={(e) => setDeliveryDetails({ ...deliveryDetails, zipCode: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter ZIP code"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Customer Contact Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    value={deliveryDetails.phone}
+                    onChange={(e) => setDeliveryDetails({ ...deliveryDetails, phone: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Customer contact phone"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Delivery Schedule
+                  </label>
+                  <select
+                    value={deliveryDetails.deliveryTime}
+                    onChange={(e) => setDeliveryDetails({ ...deliveryDetails, deliveryTime: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="standard">Standard (2-3 days)</option>
+                    <option value="express">Express (1 day)</option>
+                    <option value="urgent">Urgent (Same day)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Admin Notes / Special Instructions
+                  </label>
+                  <textarea
+                    value={deliveryDetails.specialInstructions}
+                    onChange={(e) => setDeliveryDetails({ ...deliveryDetails, specialInstructions: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Admin notes or special delivery instructions"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowDeliveryModal(false)}
+                className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeliverySubmit}
+                disabled={!deliveryDetails.address || !deliveryDetails.city || !deliveryDetails.zipCode || !deliveryDetails.phone}
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors duration-200"
+              >
+                Process Delivery Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Token Number Modal */}
+      {showTokenModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <Hash className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Pickup Token Generated</h3>
+                  <p className="text-gray-600">For in-store prescription pickup</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTokenModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              >
+                <X className="h-6 w-6 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6 text-center">
+              {processingPrescription && (
+                <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-2">Prescription Ready for Pickup</h4>
+                  <div className="text-sm text-gray-700">
+                    <p><strong>Prescription ID:</strong> {processingPrescription.id}</p>
+                    <p><strong>Patient:</strong> {processingPrescription.patientName}</p>
+                    <p><strong>Status:</strong> Ready for In-Store Pickup</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-green-50 p-8 rounded-xl mb-6">
+                <div className="text-4xl font-bold text-green-600 mb-2">{tokenNumber}</div>
+                <p className="text-green-800 font-medium">Pickup Token Number</p>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg text-left">
+                <h5 className="font-semibold text-blue-900 mb-2">Admin Instructions:</h5>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Share this token with the customer</li>
+                  <li>• Customer must present token and valid ID</li>
+                  <li>• Verify customer identity before dispensing</li>
+                  <li>• Token is valid for 7 days</li>
+                  <li>• Record pickup in system when dispensed</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowTokenModal(false)}
+                className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200"
+              >
+                Token Generated - Close
+              </button>
             </div>
           </div>
         </div>

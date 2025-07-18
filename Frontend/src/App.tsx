@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import AppointmentModal from './components/AppointmentModal';
+import UploadPrescriptionModal from './components/UploadPrescriptionModal';
+import ScheduleAppointmentModal from './components/ScheduleAppointmentModal';
 import InventoryDashboard from './components/InventoryDashboard';
 import PrescriptionVerification from './components/PrescriptionVerification';
 import BookVisitVerification from './components/BookVisitVerification';
@@ -143,6 +145,8 @@ const testimonials: Testimonial[] = [
 
 function App() {
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [isUploadPrescriptionModalOpen, setIsUploadPrescriptionModalOpen] = useState(false);
+  const [isScheduleAppointmentModalOpen, setIsScheduleAppointmentModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState('home'); // 'home', 'inventory', 'prescription-verification', 'visit-verification'
 
   const openAppointmentModal = () => {
@@ -151,6 +155,22 @@ function App() {
 
   const closeAppointmentModal = () => {
     setIsAppointmentModalOpen(false);
+  };
+
+  const openUploadPrescriptionModal = () => {
+    setIsUploadPrescriptionModalOpen(true);
+  };
+
+  const closeUploadPrescriptionModal = () => {
+    setIsUploadPrescriptionModalOpen(false);
+  };
+
+  const openScheduleAppointmentModal = () => {
+    setIsScheduleAppointmentModalOpen(true);
+  };
+
+  const closeScheduleAppointmentModal = () => {
+    setIsScheduleAppointmentModalOpen(false);
   };
 
   if (currentPage === 'prescription-verification') {
@@ -205,7 +225,7 @@ function App() {
           </div>
         </nav>
         
-        <PrescriptionVerification />
+        <PrescriptionVerification onUploadPrescription={openUploadPrescriptionModal} />
       </div>
     );
   }
@@ -262,7 +282,7 @@ function App() {
           </div>
         </nav>
         
-        <BookVisitVerification />
+        <BookVisitVerification onScheduleAppointment={openScheduleAppointmentModal} />
       </div>
     );
   }
@@ -679,6 +699,18 @@ function App() {
       <AppointmentModal 
         isOpen={isAppointmentModalOpen} 
         onClose={closeAppointmentModal} 
+      />
+
+      {/* Upload Prescription Modal */}
+      <UploadPrescriptionModal 
+        isOpen={isUploadPrescriptionModalOpen} 
+        onClose={closeUploadPrescriptionModal} 
+      />
+
+      {/* Schedule Appointment Modal */}
+      <ScheduleAppointmentModal 
+        isOpen={isScheduleAppointmentModalOpen} 
+        onClose={closeScheduleAppointmentModal} 
       />
     </div>
   );
