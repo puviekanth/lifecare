@@ -18,12 +18,13 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import BookConsultation from './pages/BookConsultation';
 import UploadPrescription from './pages/UploadPrescription';
-
+import CompletedPrescriptions from './pages/CompletedPrescriptions';
+import Navbar from './components/Navbar';
 
 function App() {
   return (
     <Router>
-      
+      <Navbar />
       <div className="min-h-screen bg-gray-50">
         <Routes>
           <Route path='/' element={< Home />}/>
@@ -43,6 +44,7 @@ function App() {
           <Route path='/checkout' element={<Checkout />}/>
           <Route path='/consultation' element={<BookConsultation />}/>
           <Route path='/prescription' element={<UploadPrescription />} />
+          <Route path="/completed-prescriptions" element={<CompletedPrescriptions />} />
         </Routes>
       </div>
       <Footer />
