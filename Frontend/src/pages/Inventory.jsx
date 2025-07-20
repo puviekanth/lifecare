@@ -48,7 +48,7 @@ const Home = () => {
     try {
       await axios.delete(`${api}/deleteproduct/${id}`);
       setProducts(products.filter((item) => item._id !== id));
-      navigate('/');
+      navigate('/inventory');
     } catch (error) {
       console.error('Error deleting product:', error);
       setError('Failed to delete product.');
@@ -116,6 +116,7 @@ const Home = () => {
                   <th className="px-3">Description</th>
                   <th className="px-3">Manufacture Date</th>
                   <th className="px-3">Expiration Warning</th>
+                  <th className='px-3'>Stock Level</th>
                   <th className="px-3">Actions</th>
                 </tr>
               </thead>

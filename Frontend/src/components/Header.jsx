@@ -10,10 +10,10 @@ const Header = () => {
   // Define navigation links in an array for reusability
   const navLinks = [
     { to: "/bill", label: "Bill Products" },
-    { to: "/", label: "Medicine Management" },
     { to: "/inventory", label: "Inventory" },
     { to: "/suppliers", label: "Suppliers" },
     { to: "/reports", label: "Reports" },
+    { to:'/prescriptions', label:'Prescriptions'}
   ];
 
   // Common styles for NavLink

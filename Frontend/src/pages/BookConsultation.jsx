@@ -29,7 +29,9 @@ const BookConsultation = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const api = 'http://localhost:3000';
-  const googleApiKey = import.meta.env.GOOGLE_GEOCODING_API;
+  const googleApiKey = import.meta.env.VITE_GOOGLE_GEOCODING_API;
+
+  
 
   // Time slots (9:00 AM - 5:00 PM, 30-minute intervals)
   const timeSlots = [
@@ -69,32 +71,57 @@ const BookConsultation = () => {
   }, [step]);
 
   // Fetch location suggestions from Google Maps Geocoding API
-  useEffect(() => {
-    if (step === 4 && searchQuery) {
-      const fetchSuggestions = async () => {
-        try {
-          const response = await axios.get(
-            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery)}&key=${googleApiKey}`
-          );
-          const results = response.data.results.map((result) => ({
-            name: result.formatted_address,
-            lat: result.geometry.location.lat,
-            lng: result.geometry.location.lng,
+ useEffect(() => {
+  if (step === 4 && searchQuery && googleApiKey) {
+    const fetchSuggestions = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/api/autocomplete?input=${encodeURIComponent(searchQuery)}`
+        );
+        console.log('API Response:', response.data);
+        if (response.data.status === 'OK') {
+          const results = response.data.predictions.map((prediction) => ({
+            name: prediction.description,
+            place_id: prediction.place_id,
           }));
           setSuggestions(results);
-        } catch (err) {
-          console.error('Geocoding error:', err);
-          setError('Failed to fetch location suggestions. Please try again.');
+        } else {
+          setError(`API Error: ${response.data.status} - ${response.data.error_message || 'Unknown error'}`);
           setSuggestions([]);
         }
-      };
-      // Debounce to avoid excessive API calls
-      const timeout = setTimeout(fetchSuggestions, 300);
-      return () => clearTimeout(timeout);
-    } else {
-      setSuggestions([]);
+      } catch (err) {
+        console.error('Autocomplete error:', err.response ? err.response.data : err.message);
+        setError('Failed to fetch location suggestions. Please try again.');
+        setSuggestions([]);
+      }
+    };
+    const timeout = setTimeout(fetchSuggestions, 500);
+    return () => clearTimeout(timeout);
+  } else {
+    setSuggestions([]);
+    if (!googleApiKey) {
+      setError('API key is not loaded. Check your .env configuration.');
     }
-  }, [searchQuery, step]);
+  }
+}, [searchQuery, step]);
+
+const fetchPlaceDetails = async (placeId) => {
+  try {
+    const response = await axios.get(
+      `http://localhost:3000/api/place-details?place_id=${encodeURIComponent(placeId)}`
+    );
+    if (response.data.status === 'OK') {
+      const { lat, lng } = response.data.result.geometry.location;
+      return { lat, lng };
+    } else {
+      throw new Error(`Place Details Error: ${response.data.status} - ${response.data.error_message || 'Unknown error'}`);
+    }
+  } catch (err) {
+    console.error('Place Details error:', err.message);
+    setError('Failed to fetch place details. Please try again.');
+    return null;
+  }
+};
 
   const handleChange = (section, field, value) => {
     setFormData({
@@ -108,21 +135,25 @@ const BookConsultation = () => {
   };
 
   const handleLocationChange = (lat, lng) => {
-    setFormData({
-      ...formData,
-      location: {
-        lat,
-        lng,
-        link: `https://maps.google.com/?q=${lat},${lng}`,
-      },
-    });
-    setSearchQuery('');
-    setSuggestions([]);
-  };
-
-  const handleSuggestionSelect = (suggestion) => {
-    handleLocationChange(suggestion.lat, suggestion.lng);
-  };
+  setFormData({
+    ...formData,
+    location: {
+      lat,
+      lng,
+      link: `https://maps.google.com/?q=${lat},${lng}`,
+    },
+  });
+  setSearchQuery('');
+  setSuggestions([]);
+};
+  const handleSuggestionSelect = async (suggestion) => {
+  const coords = await fetchPlaceDetails(suggestion.place_id);
+  if (coords) {
+    handleLocationChange(coords.lat, coords.lng);
+    setSearchQuery(suggestion.name); // Optional: Update input with selected name
+    setSuggestions([]); // Clear suggestions after selection
+  }
+};
 
   const validateStep = () => {
     setError('');
@@ -596,24 +627,24 @@ const BookConsultation = () => {
                         aria-controls="location-suggestions"
                       />
                       {suggestions.length > 0 && (
-                        <ul
-                          id="location-suggestions"
-                          className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg"
-                          role="listbox"
-                        >
-                          {suggestions.map((suggestion, index) => (
-                            <li
-                              key={index}
-                              onClick={() => handleSuggestionSelect(suggestion)}
-                              className="px-4 py-2 text-gray-800 hover:bg-blue-100 cursor-pointer"
-                              role="option"
-                              aria-selected={false}
-                            >
-                              {suggestion.name}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                          <ul
+                            id="location-suggestions"
+                            className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg"
+                            role="listbox"
+                          >
+                            {suggestions.map((suggestion, index) => (
+                              <li
+                                key={index}
+                                onClick={() => handleSuggestionSelect(suggestion)} // Async function call
+                                className="px-4 py-2 text-gray-800 hover:bg-blue-100 cursor-pointer"
+                                role="option"
+                                aria-selected={false}
+                              >
+                                {suggestion.name}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       <p className="text-sm text-gray-500 mt-1">Enter an address or drag the marker on the map</p>
                     </motion.div>
                     <motion.div variants={fieldVariants} custom={1}>
