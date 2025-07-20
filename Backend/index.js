@@ -13,10 +13,13 @@ const CartModel = require('./model/CartModel');
 const OrderModel = require('./model/OrderModel');
 const Consultation = require('./model/ConsultationModel'); // Import Consultation model
 const PrescriptionModel = require('./model/PrescriptionModel');
+const axios = require('axios');
+require('dotenv').config();
 
 const app = express();
 const saltRounds = 10;
 const secretKey = 'lifecare/AGILE/y3s2';
+const GOOGLE_API_KEY = process.env.GOOGLE_GEOCODING_API;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -220,7 +223,7 @@ app.get('/getproducts', async (req, res) => {
 });
 
 // Add new product
-app.post('/addproduct', authenticateJWT, uploadMedicine, async (req, res) => {
+app.post('/addproduct', uploadMedicine, async (req, res) => {
   const { medicineName, price, otcStatus, companyName, quantity, description, manufactureDate, expiryDate } = req.body;
   if (!req.file) return res.status(400).json({ message: 'Image is required' });
   const imagePath = req.file.path;
@@ -250,7 +253,7 @@ app.post('/addproduct', authenticateJWT, uploadMedicine, async (req, res) => {
 });
 
 // Update existing product
-app.put('/updateproduct/:id', authenticateJWT, uploadMedicine, async (req, res) => {
+app.put('/updateproduct/:id', uploadMedicine, async (req, res) => {
   const { id } = req.params;
   const { productName, description, price, category, quantity, companyName, manufactureDate, expiryDate } = req.body;
   try {
@@ -298,7 +301,7 @@ app.put('/updateproduct/:id', authenticateJWT, uploadMedicine, async (req, res) 
 });
 
 // Delete a product
-app.delete('/deleteproduct/:id', authenticateJWT, async (req, res) => {
+app.delete('/deleteproduct/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await ProductModel.findByIdAndDelete(id);
@@ -324,7 +327,7 @@ app.get('/getproduct', async (req, res) => {
 });
 
 // Create Supplier
-app.post('/addsuppliers', authenticateJWT, async (req, res) => {
+app.post('/addsuppliers', async (req, res) => {
   try {
     const { supplierName, companyName, email, phone } = req.body;
     const supplier = await new SupplierModel({ supplierName, companyName, email, phone }).save();
@@ -339,7 +342,7 @@ app.post('/addsuppliers', authenticateJWT, async (req, res) => {
 });
 
 // Get suppliers
-app.get('/getsuppliers', authenticateJWT, async (req, res) => {
+app.get('/getsuppliers', async (req, res) => {
   try {
     const suppliers = await SupplierModel.find();
     res.json(suppliers);
@@ -350,7 +353,7 @@ app.get('/getsuppliers', authenticateJWT, async (req, res) => {
 });
 
 // Update supplier
-app.put('/updatesupplier/:id', authenticateJWT, async (req, res) => {
+app.put('/updatesupplier/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { supplierName, companyName, email } = req.body;
@@ -373,7 +376,7 @@ app.put('/updatesupplier/:id', authenticateJWT, async (req, res) => {
 });
 
 // Delete supplier
-app.delete('/deletesupplier/:id', authenticateJWT, async (req, res) => {
+app.delete('/deletesupplier/:id', async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -698,6 +701,59 @@ app.post('/prescriptionUpload',authenticateJWT , uploadPrescriptionRecords, asyn
   }
 });
 
+app.get('/api/prescriptions', async (req, res) => {
+  try {
+    const all = await PrescriptionModel.find().sort({ uploadedAt: -1 });
+    res.status(200).json(all);
+  } catch (error) {
+    console.error('Failed to fetch prescriptions:', error);
+    res.status(500).json({ message: 'Error fetching delivery details' });
+  }
+});
+
+// DELETE prescription by ID
+app.delete('/api/prescriptions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await PrescriptionModel.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Prescription deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete prescription:', error);
+    res.status(500).json({ message: 'Failed to delete delivery' });
+  }
+});
+
+//location autocomplete api
+app.get('/api/autocomplete', async (req, res) => {
+  try {
+    
+    const query = req.query.input;
+    const response = await axios.get(
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+        query
+      )}&key=${GOOGLE_API_KEY}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+//to get the location from the suggestion
+app.get('/api/place-details', async (req, res) => {
+  try {
+    const placeId = req.query.place_id;
+    const response = await axios.get(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
+        placeId
+      )}&fields=geometry&key=${GOOGLE_API_KEY}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 
 

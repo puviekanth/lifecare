@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+
 const AddSupplier = () => {
   const navigate = useNavigate();
   const api = 'http://localhost:3000';
@@ -65,7 +66,7 @@ const AddSupplier = () => {
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-blue-800">Add New Supplier</h2>
           <button
-            onClick={() => navigate('/supplier')}
+            onClick={() => navigate('/suppliers')}
             className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
             disabled={isSubmitting}
           >
@@ -158,7 +159,7 @@ const AddSupplier = () => {
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
             <button
               type="button"
-              onClick={() => navigate('/supplier')}
+              onClick={() => navigate('/suppliers')}
               className="px-4 py-2 border border-gray-400 rounded-md text-gray-700 hover:bg-gray-100 transition"
               disabled={isSubmitting}
             >
