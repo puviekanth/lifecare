@@ -13,6 +13,7 @@ const CartModel = require('./model/CartModel');
 const OrderModel = require('./model/OrderModel');
 const Consultation = require('./model/ConsultationModel'); // Import Consultation model
 const PrescriptionModel = require('./model/PrescriptionModel');
+const Contact = require('./model/Contact')
 const axios = require('axios');
 require('dotenv').config();
 
@@ -752,6 +753,19 @@ app.get('/api/place-details', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Contact Us Route
+app.post('/api/contact', async (req, res) => {
+  try {
+    console.log('📨 Contact Form Data:', req.body);  // DEBUG
+    const contact = new Contact(req.body);
+    await contact.save();
+    res.status(201).json({ message: 'Message submitted successfully.' });
+  } catch (err) {
+    console.error('❌ Error saving contact:', err);
+    res.status(500).json({ message: 'Something went wrong.' });
   }
 });
 

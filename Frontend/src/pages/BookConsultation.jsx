@@ -4,7 +4,6 @@ import axios from 'axios';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import EHeader from '../components/EHeader';
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -300,7 +299,6 @@ const fetchPlaceDetails = async (placeId) => {
 
   return (
     <>
-      <EHeader />
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-4xl font-extrabold text-blue-900 mb-8 text-center">

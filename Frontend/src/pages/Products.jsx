@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiX, FiStar, FiShoppingCart } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import EHeader from '../components/EHeader';
 import { Link, useNavigate } from 'react-router-dom';
 
 const categories = ['All', 'Vitamins', 'Foods', 'Sanitary', 'Cosmetics', 'Supplements'];
@@ -108,7 +107,6 @@ const Products = () => {
 
   return (
     <>
-      <EHeader />
       <div className="container mx-auto px-4 py-12 bg-gray-50">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}

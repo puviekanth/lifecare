@@ -19,12 +19,15 @@ import Checkout from './pages/Checkout';
 import BookConsultation from './pages/BookConsultation';
 import UploadPrescription from './pages/UploadPrescription';
 import Prescriptions from './pages/Prescriptions';
+import ContactUs from './pages/ContactUs';
+import EHeader from './components/EHeader';
+import AboutUs from './pages/AboutUs';
 
 
 function App() {
   return (
     <Router>
-      
+      <EHeader/>
       <div className="min-h-screen bg-gray-50">
         <Routes>
           <Route path='/' element={< Home />}/>
@@ -45,6 +48,8 @@ function App() {
           <Route path='/consultation' element={<BookConsultation />}/>
           <Route path='/prescription' element={<UploadPrescription />} />
           <Route path='/prescriptions' element={<Prescriptions />} />
+          <Route path='/contact-us' element={<ContactUs />} />
+          <Route path='/about-us' element={<AboutUs />} />
         </Routes>
       </div>
       <Footer />

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import EHeader from '../components/EHeader';
+
 import {
   ShieldCheckIcon,
   TruckIcon,
@@ -102,7 +102,6 @@ const Home = () => {
 
   return (
     <>
-    <EHeader />
     <main className="bg-gray-50">
       {/* Hero Section */}
       <section
