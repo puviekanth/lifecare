@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import ProductStatsChart from '../components/ProductStatsChart';
 
 import {
   ShieldCheckIcon,
@@ -167,6 +168,32 @@ const Home = () => {
 
       {/* Stats Section */}
       <StatsSection />
+
+      {/* Product Statistics Chart */}
+      <motion.section
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="bg-white py-16"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-900 mb-4">
+              Inventory Overview
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Real-time insights into our product inventory status, helping us maintain quality and availability.
+            </p>
+          </motion.div>
+          <ProductStatsChart />
+        </div>
+      </motion.section>
 
       {/* Why Choose Life Care */}
       <motion.section
