@@ -718,7 +718,46 @@ app.delete('/api/prescriptions/:id', authenticateJWT, async (req, res) => {
   }
 });
 
+// Product Statistics API
+app.get('/api/product-stats', async (req, res) => {
+  try {
+    const currentDate = new Date();
+    const lowStockThreshold = 10; // Define low stock threshold
 
+    // Get all products
+    const allProducts = await ProductModel.find();
+    const totalProducts = allProducts.length;
+
+    // Count expired products
+    const expiredProducts = allProducts.filter(product => 
+      product.expiryDate && new Date(product.expiryDate) < currentDate
+    ).length;
+
+    // Count low stock products (quantity <= threshold and not expired)
+    const lowStockProducts = allProducts.filter(product => 
+      product.quantity <= lowStockThreshold && 
+      (!product.expiryDate || new Date(product.expiryDate) >= currentDate)
+    ).length;
+
+    // Count safe and in stock products
+    const safeAndInStock = allProducts.filter(product => 
+      product.quantity > lowStockThreshold && 
+      (!product.expiryDate || new Date(product.expiryDate) >= currentDate)
+    ).length;
+
+    const stats = {
+      totalProducts,
+      expiredProducts,
+      lowStockProducts,
+      safeAndInStock
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching product statistics:', error);
+    res.status(500).json({ message: 'Error fetching product statistics' });
+  }
+});
 
 // Start the server
 app.listen(3000, () => {
